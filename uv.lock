@@ -27,6 +27,7 @@ source = { editable = "." }
 dependencies = [
     { name = "mako" },
     { name = "mininet" },
+    { name = "packaging" },
     { name = "setuptools" },
 ]
 
@@ -45,6 +46,7 @@ requires-dist = [
     { name = "mako", specifier = ">=1.1" },
     { name = "mdformat", marker = "extra == 'dev'" },
     { name = "mininet", git = "https://github.com/mimi-net/mininet.git" },
+    { name = "packaging" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest", marker = "extra == 'testing'" },
     { name = "ruff", marker = "extra == 'dev'" },

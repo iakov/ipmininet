@@ -51,6 +51,7 @@ All `[prescribing]` rules are MUST or SHOULD. Each MUST rule must be enforced by
 
 - **`mininet`** is pinned to `mimi-net/mininet.git` fork — do not change to the official repo.
 - **Version constraints**: `pyproject.toml` uses loose constraints; exact pins in `uv.lock` [→ DEVELOPMENT.md for rationale].
+- **`uv.lock` must stay in sync**: Run `uv sync --all-extras` after every `pyproject.toml` change. Commit the updated `uv.lock` together with the `pyproject.toml` change — never separately.
 
 ### Testing
 
