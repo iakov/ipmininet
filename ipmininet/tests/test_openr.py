@@ -15,17 +15,17 @@ from . import require_root
 
 class SimpleOpenrTopo(IPTopo):
     def __init__(self, *args, **kwargs):
-        self.r4_log_dir = '/var/tmp/custom/log_dir/location'
+        self.r4_log_dir = "/var/tmp/custom/log_dir/location"
         super().__init__(*args, **kwargs)
 
     def build(self, *args, **kwargs):
         # pylint: disable=unbalanced-tuple-unpacking
         r_1, r_2, r_3 = \
-            self.addRouters('r_1', 'r_2', 'r_3',
+            self.addRouters("r_1", "r_2", "r_3",
                             cls=OpenrRouter,
                             routerDescription=OpenrRouterDescription,
                             config=OpenrRouterConfig)
-        r_4 = self.addRouter('r_4',
+        r_4 = self.addRouter("r_4",
                              cls=OpenrRouter,
                              routerDescription=OpenrRouterDescription)
         r_4.addOpenrDaemon(log_dir=self.r4_log_dir)
@@ -51,11 +51,11 @@ def test_logdir_creation():
         net = IPNet(topo=topo)
         net.start()
 
-        default_log_dir = '/var/tmp/log'
+        default_log_dir = "/var/tmp/log"
 
         for i in range(1, 4):
-            assert os.path.isdir('{}/r_{}'.format(default_log_dir, i))
-        assert not os.path.isdir('{}/r_4'.format(default_log_dir))
+            assert os.path.isdir(f"{default_log_dir}/r_{i}")
+        assert not os.path.isdir(f"{default_log_dir}/r_4")
         assert os.path.isdir(topo.r4_log_dir)
 
         net.stop()
@@ -69,7 +69,7 @@ def test_tmp_isolation():
         net = IPNet(topo=SimpleOpenrTopo())
         net.start()
 
-        tmp_dir = '/tmp'
+        tmp_dir = "/tmp"
         with tempfile.NamedTemporaryFile(dir=tmp_dir) as file:
             host_file_name = file.name
             host_file_base_name = os.path.basename(host_file_name)
@@ -78,16 +78,15 @@ def test_tmp_isolation():
             assert os.path.isfile(host_file_name)
             assert host_file_base_name in host_tmp_dir_content
             for i in range(1, 5):
-                node_tmp_dir_content = net['r_{}'.format(i)] \
-                                       .cmd('ls {}'.format(tmp_dir)) \
+                node_tmp_dir_content = net[f"r_{i}"] \
+                                       .cmd(f"ls {tmp_dir}") \
                                        .split()
                 assert host_file_base_name not in node_tmp_dir_content
 
         node_file_base_name = str(uuid.uuid1())
-        node_file_name = '{}/{}'.format(tmp_dir,
-                                        node_file_base_name)
-        net['r_1'].cmd('touch {}'.format(node_file_name))
-        node_tmp_dir_content = net['r_1'].cmd('ls {}'.format(tmp_dir)).split()
+        node_file_name = f"{tmp_dir}/{node_file_base_name}"
+        net["r_1"].cmd(f"touch {node_file_name}")
+        node_tmp_dir_content = net["r_1"].cmd(f"ls {tmp_dir}").split()
         host_tmp_dir_content = os.listdir(tmp_dir)
 
         assert node_file_base_name in node_tmp_dir_content
