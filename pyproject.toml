@@ -21,6 +21,7 @@ dependencies = [
     "setuptools",
     "mako>=1.1",
     "mininet @ git+https://github.com/mimi-net/mininet.git",
+    "packaging",
 ]
 
 [[project.authors]]
