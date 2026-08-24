@@ -25,8 +25,8 @@ RUN mkdir -p /opt/ipmininet-archives \
 # Stage 2: compile — libyang + frrouting (cached unless install.py changes)
 FROM deps AS compile
 COPY ipmininet/install/ /workspace/ipmininet/install/
-COPY .tmp/ci-compile.sh /workspace/.tmp/ci-compile.sh
-RUN mkdir -p /workspace/.tmp && .tmp/ci-compile.sh \
+COPY scripts/ci-compile.sh /workspace/scripts/ci-compile.sh
+RUN mkdir -p /workspace/.tmp && scripts/ci-compile.sh \
     && mkdir -p /opt/compiled-frr/lib /opt/compiled-frr/share /opt/compiled-frr/lib/x86_64-linux-gnu \
     && find /usr/lib/x86_64-linux-gnu -name 'libyang*' -exec cp -rLt /opt/compiled-frr/lib/x86_64-linux-gnu/ {} + 2>/dev/null || true \
     && cp -r /usr/lib/x86_64-linux-gnu/libyang1 /opt/compiled-frr/lib/x86_64-linux-gnu/ 2>/dev/null || true \
@@ -53,5 +53,5 @@ COPY . /workspace
 WORKDIR /workspace
 RUN uv sync --all-extras \
     && mkdir -p /etc/default && touch /etc/default/grub /workspace/.tmp \
-    && .tmp/ci-install.sh
+    && scripts/ci-install.sh
 CMD ["bash"]

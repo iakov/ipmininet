@@ -16,7 +16,6 @@ if [ ! -e /var/run/openvswitch/db.sock ]; then
     sleep 0.5
 fi
 
-# Add exabgp to PATH
 export PATH="/root:$PATH"
 
 exec sudo env "PATH=$PATH" uv run python -m pytest \

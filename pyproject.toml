@@ -40,7 +40,7 @@ Homepage = "https://github.com/cnp3/ipmininet"
 
 [project.optional-dependencies]
 testing = ["pytest", "pytest-cov", "pytest-timeout"]
-dev = ["ipmininet[testing]", "ruff", "mdformat"]
+dev = ["ipmininet[testing]", "ruff", "mdformat", "shellcheck-py"]
 
 [tool.setuptools]
 include-package-data = true

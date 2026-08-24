@@ -45,6 +45,9 @@ All `[prescribing]` rules are MUST or SHOULD. Each MUST rule must be enforced by
 - **TDD**: Write the test, see it fail, implement, see it pass.
 - **Git Flow**: Feature branches (`fix/*`, `chore/*`). Merge into `master` via PR inside `iakov/ipmininet`. No direct pushes to master.
 - **Retro before push**: Before every publish (push, PR), review the session for mistakes and fix them mid-session. Do not batch fixes after push.
+- **Pre-PR full validation**: Before opening a PR, run the full rootless container test suite:
+  `scripts/ci-test.sh ipmininet/tests/`. This ~2-hour validation matches the heavy CI that runs
+  on master merge.
 - **Doc commits first**: Doc updates go in a separate commit or before the final cleanup commit, never mixed with code.
 
 ### Dependencies
@@ -64,9 +67,9 @@ All `[prescribing]` rules are MUST or SHOULD. Each MUST rule must be enforced by
 
 - **Every CI command must pre-arm its most likely failure mode** so the first run is diagnostic-complete.
   Re-running with "more logging" is a fault — fix the command flags instead.
-- **pytest must always use**: `--timeout=120 --timeout-method=signal` (converts hang to named failure),
-  `-p faulthandler` (dumps stack on crash),
+- **pytest must always use**: `-p faulthandler` (dumps stack on crash),
   `--showlocals --capture=tee-sys --tb=long` (full context on assertion failure).
+  Timeout config (`timeout = 300, timeout_method = "thread"`) is in `pyproject.toml` — do not duplicate in scripts.
 - **Install commands must tee stdout+stderr to a known file path** so failure logs are always available
   for post-mortem. If output takes >1 minute to generate, pre-redirect to a file.
 - **Never re-run without diagnosis**: Before cancelling or retrying any CI run, extract ALL available
@@ -89,7 +92,7 @@ All `[prescribing]` rules are MUST or SHOULD. Each MUST rule must be enforced by
   if a later step fails. Apt packages in one layer, compile in the next. Pay apt download once,
   retry compile cheaply.
 - **`.dockerignore` excludes build artifacts** (`.venv`, `.git`, `__pycache__`), but **keeps tooling
-  scripts** (`.tmp/ci-*.sh`). Never exclude something the build needs.
+  scripts** (`scripts/ci-*.sh`). Never exclude something the build needs.
 
 ### Local reproduction before CI
 
@@ -149,7 +152,7 @@ docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
 
 # Run a single test file
 docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
-    sudo env "PATH=$PATH" .tmp/ci-test.sh ipmininet/tests/test_bgp.py
+    sudo env "PATH=$PATH" scripts/ci-test.sh ipmininet/tests/test_bgp.py
 
 # Rebuild only the final stage (fast, ~30s) after source code changes
 docker build -t ipmininet-dev -f Containerfile --target final .
@@ -163,8 +166,13 @@ podman build -t ipmininet-dev --volume ipmininet-build:/root --network host .
 
 # Diagnostic run with full timeout + faulthandler output
 docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
-    sudo env "PATH=$PATH" .tmp/ci-diag.sh ipmininet/tests/
+    sudo env "PATH=$PATH" scripts/ci-diag.sh ipmininet/tests/
 # Diagnostic log written to .tmp/ci-diag-*.log
+
+# Before PR: full 2-hour validation
+docker build -t ipmininet-dev -f Containerfile .
+docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
+    sudo env "PATH=$PATH" scripts/ci-test.sh ipmininet/tests/
 
 # Build a specific stage for debugging
 docker build -t ipmininet-deps -f Containerfile --target deps .

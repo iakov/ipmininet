@@ -1,8 +1,9 @@
 name: Test IPMininet
 on: [push, pull_request]
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v5
@@ -25,36 +26,7 @@ jobs:
           if grep -rn '# type: ignore' ipmininet --include='*.py'; then echo "Found # type: ignore comments"; exit 1; fi
       - name: Coverage configs must be identical
         run: diff .coveragerc ipmininet/.coveragerc || (echo ".coveragerc and ipmininet/.coveragerc must be identical" && exit 1)
-
-  test:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    needs: lint
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build and cache test container
-        uses: docker/build-push-action@v6
-        with:
-          file: Containerfile
-          target: final
-          push: false
-          load: true
-          tags: ipmininet-dev
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Run core tests with coverage
-        run: |
-          docker run --rm --privileged \
-            -v $PWD:/workspace:Z \
-            ipmininet-dev \
-            sudo env "PATH=$PATH" .tmp/ci-test.sh \
-              ipmininet/tests/test_address_alllocation.py \
-              ipmininet/tests/test_cli.py \
-              ipmininet/tests/test_misc.py
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: htmlcov/
+      - name: Shellcheck scripts
+        run: uv run shellcheck scripts/*.sh
+      - run: sudo env "PATH=$PATH" uv run python -m ipmininet.install -a
+      - run: sudo env "PATH=$PATH" uv run pytest --cov-config=.coveragerc --cov=ipmininet/ -v --ignore=ipmininet/tests/test_exabgp.py --ignore=ipmininet/tests/test_openr.py
