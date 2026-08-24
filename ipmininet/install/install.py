@@ -59,30 +59,38 @@ def parse_args():
 def install_mininet(output_dir: str, pip_install=True):
     dist.install("git")
 
-    if dist.NAME == "Fedora":
-        mininet_opts = "-fnp"
-        dist.install("openvswitch", "openvswitch-devel", "openvswitch-test")
-        sh("systemctl enable openvswitch")
-        sh("systemctl start openvswitch")
-    else:
-        mininet_opts = "-a"
-
-    sh("git clone https://github.com/mininet/mininet.git", cwd=output_dir)
-    # Save valid version of mininet install script
-    sh(f"git checkout {MininetInstallCommit}",
-       cwd=os.path.join(output_dir, "mininet/util"))
-    sh("cp install.sh install.tmp.sh",
-       cwd=os.path.join(output_dir, "mininet/util"))
-    # Use it in the fixed version of Mininet
-    sh(f"git checkout {MininetVersion}",
-       cwd=os.path.join(output_dir, "mininet/util"))
-    sh("mv install.tmp.sh install.sh",
-       cwd=os.path.join(output_dir, "mininet/util"))
-    sh(f"./install.sh {mininet_opts} -s .",
-       cwd=os.path.join(output_dir, "mininet/util"))
+    mininet_dir = os.path.join(output_dir, "mininet")
+    if not os.path.isdir(mininet_dir):
+        sh("git clone https://github.com/mininet/mininet.git", cwd=output_dir)
 
     if pip_install:
+        # Full install: use a pinned install.sh, then pip-install
+        if dist.NAME == "Fedora":
+            mininet_opts = "-fnp"
+            dist.install("openvswitch", "openvswitch-devel", "openvswitch-test")
+            sh("systemctl enable openvswitch")
+            sh("systemctl start openvswitch")
+        else:
+            mininet_opts = "-a"
+
+        sh(f"git checkout {MininetInstallCommit}",
+           cwd=os.path.join(mininet_dir, "util"))
+        sh("cp install.sh install.tmp.sh",
+           cwd=os.path.join(mininet_dir, "util"))
+        sh(f"git checkout {MininetVersion}",
+           cwd=os.path.join(mininet_dir, "util"))
+        sh("mv install.tmp.sh install.sh",
+           cwd=os.path.join(mininet_dir, "util"))
+        sh(f"./install.sh {mininet_opts} -s .",
+           cwd=os.path.join(mininet_dir, "util"))
         dist.pip_install("mininet/", cwd=output_dir)
+    else:
+        # Minimal: checkout version, build only mnexec binary
+        sh(f"git checkout {MininetVersion}",
+           cwd=mininet_dir)
+        sh("make mnexec", cwd=mininet_dir)
+        sh("cp mnexec /usr/local/bin/",
+           cwd=mininet_dir)
 
 
 def install_libyang(output_dir: str):
