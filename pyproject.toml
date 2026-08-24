@@ -39,7 +39,7 @@ text = "GPLv2"
 Homepage = "https://github.com/cnp3/ipmininet"
 
 [project.optional-dependencies]
-testing = ["pytest", "pytest-cov"]
+testing = ["pytest", "pytest-cov", "pytest-timeout"]
 dev = ["ipmininet[testing]", "ruff", "mdformat"]
 
 [tool.setuptools]
@@ -89,3 +89,5 @@ exclude = [".venv", "LICENSE.md"]
 testpaths = ["ipmininet/tests"]
 filterwarnings = ["ignore::DeprecationWarning"]
 addopts = "--tb=short"
+timeout = 300
+timeout_method = "thread"
