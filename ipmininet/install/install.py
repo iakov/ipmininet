@@ -1,6 +1,8 @@
 import argparse
+import glob
 import os
 import re
+import shutil
 import sys
 
 # For imports to work during setup and afterwards
@@ -35,6 +37,9 @@ def parse_args():
                         action="store_true")
     parser.add_argument("-q", "--install-frrouting",
                         help=f"Install FRRouting (version {FRRoutingVersion}) daemons",
+                        action="store_true")
+    parser.add_argument("--install-frrouting-compile",
+                        help="Install FRRouting to /opt/compiled-frr for multi-stage builds",
                         action="store_true")
     parser.add_argument("-e", "--install-exabgp",
                         help=f"Install ExaBGP (version {ExaBGPVersion}) daemon",
@@ -93,18 +98,42 @@ def install_mininet(output_dir: str, pip_install=True):
            cwd=mininet_dir)
 
 
-def install_libyang(output_dir: str):
+def make_cmd() -> str:
+    """Build with all available cores by default (single machine)."""
+    try:
+        nproc = len(os.sched_getaffinity(0)) - 1 or 1
+    except OSError:
+        nproc = 1
+    return f"make -j{nproc}"
+
+
+def install_libyang(output_dir: str, install_prefix: str = "/usr"):
     dist.install("git", "cmake")
     if dist.NAME in {"Ubuntu", "Debian"}:
         dist.install("libpcre3-dev")
     elif dist.NAME == "Fedora":
         dist.install("pcre-devel")
 
-    sh("git clone https://github.com/CESNET/libyang.git", cwd=output_dir)
-    cloned_repo = os.path.join(output_dir, "libyang")
-    sh(f"git checkout {LibyangVersion}", "mkdir build", cwd=cloned_repo)
-    sh('cmake -DENABLE_LYD_PRIV=ON -DCMAKE_INSTALL_PREFIX:PATH=/usr -D CMAKE_BUILD_TYPE:String="Release" ..',
-       "make", "make install", cwd=os.path.join(cloned_repo, "build"))
+    libyang_dir = os.path.join(output_dir, "libyang")
+
+    installed = glob.glob(os.path.join(install_prefix, "lib", "**", "libyang.so"), recursive=True)
+    if installed:
+        print(f"libyang already installed to {install_prefix}, skipping")
+        return
+
+    cache = "/opt/ipmininet-archives/libyang.tar.gz"
+    if os.path.exists(cache):
+        sh(f"tar -xzf {cache} -C {output_dir}")
+        src = os.path.join(output_dir, "libyang-1.0.215")
+        if os.path.isdir(src) and not os.path.isdir(libyang_dir):
+            os.rename(src, libyang_dir)
+    else:
+        sh("git clone https://github.com/CESNET/libyang.git", cwd=output_dir)
+        sh(f"git checkout {LibyangVersion}", cwd=libyang_dir)
+
+    sh("mkdir -p build", cwd=libyang_dir)
+    sh(f'cmake -DENABLE_LYD_PRIV=ON -DCMAKE_INSTALL_PREFIX:PATH={install_prefix} -D CMAKE_BUILD_TYPE:String="Release" ..',
+       make_cmd(), f"{make_cmd()} install", cwd=os.path.join(libyang_dir, "build"))
 
 
 def link_to_standard_dir(base_dir: str, standard_dir: str):
@@ -117,7 +146,7 @@ def link_to_standard_dir(base_dir: str, standard_dir: str):
         break
 
 
-def install_frrouting(output_dir: str):
+def install_frrouting(output_dir: str, compile_prefix: str | None = None):
     dist.install("autoconf", "automake", "libtool", "make", "gcc", "groff",
                  "patch", "make", "bison", "flex", "gawk", "texinfo",
                  "python3-pytest")
@@ -131,30 +160,42 @@ def install_frrouting(output_dir: str):
                      "perl-core", "python3-devel", "pam-devel", "systemd-devel",
                      "net-snmp-devel", "pkgconfig", "libcap-devel")
 
-    install_libyang(output_dir)
+    # Always install libyang to /usr/ so FRRouting can find it via pkg-config
+    install_libyang(output_dir, install_prefix="/usr")
+
+    frrouting_install = compile_prefix or os.path.join(output_dir, "frr")
+    sentinel = os.path.join(frrouting_install, "sbin", "zebra")
+    if not os.path.isfile(sentinel) and not compile_prefix:
+        sentinel = "/usr/sbin/zebra"
+    if os.path.isfile(sentinel):
+        print("FRRouting already installed, skipping")
+        return
 
     frrouting_src = os.path.join(output_dir, f"frr-{FRRoutingVersion}")
     frrouting_tar = frrouting_src + ".tar.gz"
-    sh(f"wget https://github.com/FRRouting/frr/releases/download/frr-{FRRoutingVersion}/"
-       f"frr-{FRRoutingVersion}.tar.gz",
-       f"tar -zxvf '{frrouting_tar}'",
-       cwd=output_dir)
+    cache = "/opt/ipmininet-archives/frr.tar.gz"
+    if os.path.exists(cache):
+        sh(f"cp {cache} {frrouting_tar}")
+    else:
+        sh(f"wget https://github.com/FRRouting/frr/releases/download/frr-{FRRoutingVersion}/"
+           f"frr-{FRRoutingVersion}.tar.gz -O {frrouting_tar}",
+           cwd=output_dir)
+    sh(f"tar -zxvf '{frrouting_tar}'", cwd=output_dir)
 
-    frrouting_install = os.path.join(output_dir, "frr")
     sh(f"./configure '--prefix={frrouting_install}'",
-       "make",
-       "make install",
+       make_cmd(),
+       f"{make_cmd()} install",
        cwd=frrouting_src)
 
-    sh(f"rm -r '{frrouting_src}' '{frrouting_tar}'")
+    if not compile_prefix:
+        # In normal mode (not multi-stage compile), set up groups and symlinks
+        sh("groupadd frr", may_fail=True)
+        sh("groupadd frrvty", may_fail=True)
+        sh("usermod -a -G frr root", may_fail=True)
+        sh("usermod -a -G frrvty root", may_fail=True)
 
-    sh("groupadd frr", may_fail=True)
-    sh("groupadd frrvty", may_fail=True)
-    sh("usermod -a -G frr root", may_fail=True)
-    sh("usermod -a -G frrvty root", may_fail=True)
-
-    for curr_dir in ("sbin", "bin"):
-        link_to_standard_dir(os.path.join(frrouting_install, curr_dir), f"/usr/{curr_dir}")
+        for curr_dir in ("sbin", "bin"):
+            link_to_standard_dir(os.path.join(frrouting_install, curr_dir), f"/usr/{curr_dir}")
 
 
 def install_openr(output_dir: str, may_fail=False):
@@ -204,7 +245,12 @@ def update_grub():
         cmd = "update-grub"
     else:
         return
-    sh(cmd)
+    # Split cmd to get the executable name for the existence check
+    executable = cmd.split()[0]
+    if not shutil.which(executable):
+        print(f"{executable} not found, skipping grub update", file=sys.stderr)
+        return
+    sh(cmd, may_fail=True)
 
 
 def enable_ipv6():
@@ -212,6 +258,10 @@ def enable_ipv6():
         dist.install("grub-common")
 
     grub_cfg = "/etc/default/grub"
+    if not os.path.exists(grub_cfg):
+        print(f"Skipping IPv6 grub configuration: {grub_cfg} not present"
+              " (e.g. inside a container)", file=sys.stderr)
+        return
     with open(grub_cfg, "r+") as f:
         data = f.read()
         f.seek(0)
@@ -226,7 +276,7 @@ def enable_ipv6():
         # Comment out lines
         f.write(re.sub(r"\n(.*disable_ipv6.*)", r"\n#\g<1>", data))
         f.truncate()
-    sh("sysctl -p")
+    sh("sysctl -p", may_fail=True)
 
 
 # Force root

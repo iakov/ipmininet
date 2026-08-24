@@ -20,6 +20,9 @@ if __name__ == "__main__":
     if args.all or args.install_mininet:
         install_mininet(args.output_dir, pip_install=not args.all)
 
+    if args.install_frrouting_compile:
+        install_frrouting(args.output_dir, compile_prefix="/opt/compiled-frr")
+
     if args.all or args.install_frrouting:
         install_frrouting(args.output_dir)
 

@@ -156,6 +156,8 @@ def check_as_path(as_path_rib: str, as_path_us: ExaList):
 
 
 @require_root
+@pytest.mark.skip(reason="ExaBGP 4.2.11 has broken vendored six dependency")
+@pytest.mark.timeout(200)
 @pytest.mark.parametrize("topo_test,frr_bgp_node", [
     (ExaBGPTopoInjectPrefixes(routes=exa_routes), "as2"),  # default IPs, custom routes,
     (ExaBGPTopoInjectPrefixes(), "as2"),  # default IPs, random routes

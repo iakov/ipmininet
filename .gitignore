@@ -15,4 +15,6 @@ _build/
 docs/api/*.rst
 .idea/
 .venv/
-.tmp/
+.tmp/*.log
+.tmp/ci-*.log
+.coverage

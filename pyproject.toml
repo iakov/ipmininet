@@ -83,7 +83,7 @@ max-returns = 8
 max-statements = 100
 
 [tool.mdformat]
-exclude = [".venv", "LICENSE.md"]
+exclude = [".venv", "LICENSE.md", ".pytest_cache"]
 
 [tool.pytest.ini_options]
 testpaths = ["ipmininet/tests"]

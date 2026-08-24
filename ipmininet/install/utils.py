@@ -94,6 +94,14 @@ class Ubuntu(Distribution):
     UPDATE_CMD = "apt-get update"
     PIP_CMD = "pip3"
 
+    def pip_install(self, *packages: str, **kwargs):
+        cmd = find_executable(self.PIP_CMD)
+        if cmd is None:
+            return
+        # PEP 668 on Ubuntu 24.04+ requires --break-system-packages
+        sh(f"{cmd} -q install --break-system-packages {self.pip_args} "
+           + " ".join(packages), **kwargs)
+
 
 class Debian(Distribution):
     NAME = "Debian"
