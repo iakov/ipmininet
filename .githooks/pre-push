@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Pre-push guardrail: prevent leaking secrets or pushing to wrong remote
+REMOTE="$1"
+URL="$2"
+
+# Block push to upstream (mimi-net) — our changes are fork-specific
+if echo "$URL" | grep -qE 'mimi-net|cnp3'; then
+    echo "ERROR: Refusing to push to upstream remote '$REMOTE' ($URL)"
+    echo "Our feature branch changes should only go to iakov/ipmininet."
+    exit 1
+fi
+
+# Check for secrets in staged changes
+if git diff --cached --diff-filter=ACMR | grep -qiE '(password|secret|token|api.?key|ssh-rsa|BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY)'; then
+    echo "ERROR: Possible secret found in staged changes. Aborting push."
+    exit 1
+fi
