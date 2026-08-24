@@ -87,3 +87,13 @@ Key invariants:
 | FRRouting 7.5 + libyang 1.0.215 | Working, pinned | Built in compile stage, cached by GHA |
 | ExaBGP 4.2.11 | `@pytest.mark.skip` | Vendored `six` broken on Python 3.12 |
 | OpenR | `@pytest.mark.skip` | External build requires ~4GB RAM, not available in CI |
+
+## Scripts lifecycle
+
+Scripts in `scripts/` are the single source of truth for CI and local dev workflows.
+
+- **Promotion path**: Temporary `.tmp/` scripts → `scripts/` once stable and shellcheck-clean
+- **Retention rule**: Every script must be used by a CI workflow, Containerfile, or explicitly documented
+  as retained-for-reference (with a comment header explaining why)
+- **Removal**: Useless scripts are deleted. If kept for reference, the file header must state the reason
+- **Maintenance**: Pre-push agent runs shellcheck and checks for drift against CI workflow references

@@ -195,3 +195,4 @@ If something can be expressed as a CI gate, script, or config check, do it there
 ## Project conventions [prescribing]
 
 - `.tmp/` — scratch directory in project root. Gitignored. Use for temp scripts, outputs, helper tools.
+- `scripts/` — promoted, clean, stable, shellcheck-passing scripts. Pre-push agent maintains them: stale scripts are removed or documented. See DEVELOPMENT.md#scripts-lifecycle.
