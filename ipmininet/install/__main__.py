@@ -17,8 +17,8 @@ if __name__ == "__main__":
 
     dist.require_pip()
 
-    if args.install_mininet:
-        install_mininet(args.output_dir)
+    if args.all or args.install_mininet:
+        install_mininet(args.output_dir, pip_install=not args.all)
 
     if args.all or args.install_frrouting:
         install_frrouting(args.output_dir)
