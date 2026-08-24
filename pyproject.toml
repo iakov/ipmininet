@@ -39,8 +39,8 @@ text = "GPLv2"
 Homepage = "https://github.com/cnp3/ipmininet"
 
 [project.optional-dependencies]
-testing = ["pytest"]
-dev = ["ruff", "pytest", "mdformat"]
+testing = ["pytest", "pytest-cov"]
+dev = ["ipmininet[testing]", "ruff", "mdformat"]
 
 [tool.setuptools]
 include-package-data = true
