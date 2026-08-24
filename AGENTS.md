@@ -56,9 +56,59 @@ All `[prescribing]` rules are MUST or SHOULD. Each MUST rule must be enforced by
 ### Testing
 
 - **`install -a`** must run before tests — installs FRRouting, mininet, radvd, etc. via `ipmininet/install/install.py`
-- **Root tests** via podman only (keeps host safe). See Commands section.
+- **Root tests** via container only (keeps host safe). See Commands section.
 - **Coverage**: two identical `.coveragerc` files — root-level alias and `ipmininet/.coveragerc` (CI target).
 - **OpenR tests** are `@pytest.mark.skip` — external build required, not run in CI.
+
+### First-fail diagnostics
+
+- **Every CI command must pre-arm its most likely failure mode** so the first run is diagnostic-complete.
+  Re-running with "more logging" is a fault — fix the command flags instead.
+- **pytest must always use**: `--timeout=120 --timeout-method=signal` (converts hang to named failure),
+  `-p faulthandler` (dumps stack on crash),
+  `--showlocals --capture=tee-sys --tb=long` (full context on assertion failure).
+- **Install commands must tee stdout+stderr to a known file path** so failure logs are always available
+  for post-mortem. If output takes >1 minute to generate, pre-redirect to a file.
+- **Never re-run without diagnosis**: Before cancelling or retrying any CI run, extract ALL available
+  diagnostics — the last test name, the last log lines, the step that timed out, the error type.
+  Each run is a data collection opportunity, not a coin flip.
+- **Read the full output, not just the tail**: When output is truncated, the saved file may contain
+  errors earlier than the last visible line. Use Read or Grep on the full output to collect ALL
+  distinct failure modes before fixing any. Re-running with one more fix is a fault — collect
+  every fix from the first failed run. Examples: missing apt packages (pip3, wget), missing
+  config files, permission errors — all visible in the full log.
+- **Ask before re-running**: "What will the next run tell me that I don't already know?"
+  If the answer is "nothing" or "I don't know", stop and read the existing output. A re-run
+  that produces no new information is pure waste.
+
+### Storage-for-time tradeoff
+
+- **Storage is cheap, time is expensive**. Pre-bake heavy containers with all dependencies and compile
+  artifacts so local iteration is fast (seconds vs. 20-min rebuilds). Accept the one-time build cost.
+- **Recoverable layers in containers**: Split `RUN` instructions so earlier cached layers are reused
+  if a later step fails. Apt packages in one layer, compile in the next. Pay apt download once,
+  retry compile cheaply.
+- **`.dockerignore` excludes build artifacts** (`.venv`, `.git`, `__pycache__`), but **keeps tooling
+  scripts** (`.tmp/ci-*.sh`). Never exclude something the build needs.
+
+### Local reproduction before CI
+
+- **For any CI issue that takes >5 minutes to reproduce**, pre-bake a container image and iterate
+  locally in seconds. Push to CI only after the fix is confirmed locally.
+- **One variable per push**: change exactly one thing, push, observe, learn. If the outcome is the
+  same as before, you learned nothing — revert and try a different variable.
+- **Binary search, don't guess**: isolate the failure source by halving the search space.
+  Never skip this step — guessing is gambling with wall-clock.
+
+### Wall-clock budget
+
+- **Every CI cycle costs real time and host resources** (CI servers are shared). Before pushing, ask:
+  "What question does this run answer?" If the answer is "I don't know, let's see what happens" —
+  don't push. Go learn locally.
+- **A cancelled run produced zero data**. If you cancelled it, you failed to collect diagnostics
+  beforehand. Let the run finish (or timeout) with diagnostics enabled.
+- **Respect CI servers**: avoid brute-force debugging. Use local containers.
+- **Respect local wall-clock**: pre-bake once, iterate fast.
 
 ## Architecture [describing]
 
@@ -92,10 +142,36 @@ uv run ruff check . --fix --unsafe-fixes  # also fix format strings in exception
 uv run mdformat --check .  # check markdown formatting
 uv run mdformat .  # fix markdown formatting
 
-# Root test (podman)
-podman build -t ipmininet-dev .
-podman run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
-    sudo env "PATH=$PATH" uv run pytest --cov-config=.coveragerc --cov=ipmininet/ -v
+# Root test (container)
+docker build -t ipmininet-dev -f Containerfile .
+docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
+    sudo env "PATH=$PATH" .tmp/ci-test.sh ipmininet/tests/
+
+# Run a single test file
+docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
+    sudo env "PATH=$PATH" .tmp/ci-test.sh ipmininet/tests/test_bgp.py
+
+# Rebuild only the final stage (fast, ~30s) after source code changes
+docker build -t ipmininet-dev -f Containerfile --target final .
+
+# Rebuild only the compile stage (after install.py changes)
+docker build -t ipmininet-dev -f Containerfile --target compile --network host .
+
+# Faster iteration with podman volume (skips compile entirely if built)
+podman volume create ipmininet-build
+podman build -t ipmininet-dev --volume ipmininet-build:/root --network host .
+
+# Diagnostic run with full timeout + faulthandler output
+docker run --rm --privileged -v $PWD:/workspace:Z ipmininet-dev \
+    sudo env "PATH=$PATH" .tmp/ci-diag.sh ipmininet/tests/
+# Diagnostic log written to .tmp/ci-diag-*.log
+
+# Build a specific stage for debugging
+docker build -t ipmininet-deps -f Containerfile --target deps .
+docker build -t ipmininet-compile -f Containerfile --target compile .
+
+# View coverage report (open in browser)
+python3 -m http.server 8000 --directory htmlcov/
 ```
 
 ## Content triage [prescribing]
