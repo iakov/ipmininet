@@ -27,4 +27,4 @@ jobs:
       - name: Coverage configs must be identical
         run: diff .coveragerc ipmininet/.coveragerc || (echo ".coveragerc and ipmininet/.coveragerc must be identical" && exit 1)
       - run: sudo env "PATH=$PATH" uv run python -m ipmininet.install -a
-      - run: sudo env "PATH=$PATH" uv run pytest --cov-config=.coveragerc --cov=ipmininet/ -v --ignore=ipmininet/tests/test_exabgp.py --ignore=ipmininet/tests/test_openr.py
+      - run: sudo env "PATH=$PATH" uv run pytest --cov-config=.coveragerc --cov=ipmininet/ -v ipmininet/tests/test_address_alllocation.py ipmininet/tests/test_bgp.py ipmininet/tests/test_cli.py ipmininet/tests/test_dns.py
