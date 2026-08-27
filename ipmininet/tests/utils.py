@@ -2,6 +2,7 @@ import pytest
 import re
 import signal
 import time
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Tuple, Dict, Pattern, Match, Optional
 
 import mininet.log
@@ -89,11 +90,15 @@ def host_connected(net: IPNet, v6=False, timeout=0.2, translate_address=True) \
         -> bool:
     require_cmd("nmap", help_str="nmap is required to run tests")
 
-    for src in net.hosts:
-        for dst in net.hosts:
+    hosts = list(net.hosts)
+    # Refresh the target addresses once, before probing
+    for dst in hosts:
+        dst.defaultIntf().updateIP()
+        dst.defaultIntf().updateIP6()
+
+    def _check_src(src) -> bool:
+        for dst in hosts:
             if src != dst:
-                dst.defaultIntf().updateIP()
-                dst.defaultIntf().updateIP6()
                 if translate_address:
                     dst_ip = dst.defaultIntf().ip6 if v6 \
                         else dst.defaultIntf().ip
@@ -107,7 +112,12 @@ def host_connected(net: IPNet, v6=False, timeout=0.2, translate_address=True) \
                 # In case of flooding, hosts might not answer
                 # So, we wait a bit before testing the next pair of hosts
                 time.sleep(0.1)
-    return True
+        return True
+
+    # Each source is probed by its own worker (never two threads touch the
+    # same node), which collapses the sweep to the cost of a single source.
+    with ThreadPoolExecutor(max_workers=min(len(hosts), 32)) as pool:
+        return all(pool.map(_check_src, hosts))
 
 
 def assert_node_not_connected(src: IPNode, dst: IPNode, v6=False, timeout=0.2):
