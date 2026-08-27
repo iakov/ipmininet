@@ -12,7 +12,7 @@ class GRETopo(IPTopo):
      +---- GRE (10.0.1.0/24) -----+"""
     def build(self, *args, **kw):
         r1, r2, r3, r4 = map(self.addRouter, ('r1', 'r2', 'r3', 'r4'))
-        self.h1, self.h2 = map(self.addHost, ('h1', 'h2'))
+        self.h1, self.h2 = (self.addHost(h, use_v6=False) for h in ('h1', 'h2'))
         for s, d in ((r1, r2), (r1, self.h1), (r2, r3), (r3, r4),
                      (r4, self.h2)):
             self.addLink(s, d)

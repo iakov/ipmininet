@@ -42,9 +42,9 @@ class MinimalOSPFNet(IPTopo):
         r2.addDaemon(OSPF)
         r3.addDaemon(OSPF)
 
-        h1 = self.addHost("h1")
-        h2 = self.addHost("h2")
-        h3 = self.addHost("h3")
+        h1 = self.addHost("h1", use_v6=False)
+        h2 = self.addHost("h2", use_v6=False)
+        h3 = self.addHost("h3", use_v6=False)
 
         self.addLinks((r1, r2, self.link_params),
                       (r1, r3, {"params1": {"ip": "10.0.4.1/24"},
@@ -63,7 +63,7 @@ class MinimalOSPFNet(IPTopo):
 @require_root
 def test_ospf_example():
     try:
-        net = IPNet(topo=SimpleOSPFNet())
+        net = IPNet(topo=SimpleOSPFNet(), use_v6=False)
         net.start()
         assert_connectivity(net)
         net.stop()
@@ -139,7 +139,7 @@ detour_paths = [
 def test_ospf_daemon_params(node_params, ospf_params, link_params, exp_cfg, exp_paths):
     try:
         net = IPNet(topo=MinimalOSPFNet(node_params, ospf_params, link_params),
-                    allocate_IPs=False)
+                    allocate_IPs=False, use_v6=False)
         net.start()
 
         # Check generated configuration
