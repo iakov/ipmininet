@@ -31,4 +31,5 @@ jobs:
             -e DEBIAN_FRONTEND=noninteractive \
             ipmininet-dev \
             scripts/ci-test.sh \
-              ipmininet/tests/test_misc.py ipmininet/tests/test_pure.py
+              ipmininet/tests/test_misc.py ipmininet/tests/test_pure.py \
+              ipmininet/tests/test_dns.py

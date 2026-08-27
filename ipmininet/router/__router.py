@@ -164,7 +164,7 @@ class IPNode(Node):
 
         # Fire up all daemons
         for d in self.nconfig.daemons:
-            self._processes.popen(shlex.split(d.startup_line))
+            self._processes.popen(shlex.split(d.startup_line), cwd=self.cwd)
             # Busy-wait if the daemon needs some time before being started
             while not d.has_started(self._processes):
                 time.sleep(.001)
@@ -177,7 +177,7 @@ class IPNode(Node):
         daemon.write(cfg)
 
     def start_daemon(self, daemon: Daemon):
-        self._processes.popen(shlex.split(daemon.startup_line))
+        self._processes.popen(shlex.split(daemon.startup_line), cwd=self.cwd)
         self._daemons.append(daemon)
 
     def terminate(self):
