@@ -91,6 +91,10 @@ def host_connected(net: IPNet, v6=False, timeout=0.2, translate_address=True) \
     require_cmd("nmap", help_str="nmap is required to run tests")
 
     hosts = list(net.hosts)
+    if not hosts:
+        # Nothing to probe (e.g. router-only topologies); the sequential
+        # loop also returns True immediately in this case.
+        return True
     # Refresh the target addresses once, before probing
     for dst in hosts:
         dst.defaultIntf().updateIP()
