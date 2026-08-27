@@ -25,9 +25,17 @@ class MinimalRIPngNet(IPTopo):
                 h3
     """
 
-    def __init__(self, is_test_flush=False, *args, **kwargs):
+    def __init__(self, is_test_flush=False, update_timer=None,
+                 timeout_timer=None, garbage_timer=None, *args, **kwargs):
         self.args_test_2 = [100, 1, 1]
         self.is_test_flush = is_test_flush
+        self.ripng_kwargs = {}
+        if update_timer is not None:
+            self.ripng_kwargs['update_timer'] = update_timer
+        if timeout_timer is not None:
+            self.ripng_kwargs['timeout_timer'] = timeout_timer
+        if garbage_timer is not None:
+            self.ripng_kwargs['garbage_timer'] = garbage_timer
         super().__init__(*args, **kwargs)
 
     def build(self, *args, **kwargs):
@@ -61,9 +69,9 @@ class MinimalRIPngNet(IPTopo):
                             timeout_timer=self.args_test_2[1],
                             garbage_timer=self.args_test_2[2])
         else:
-            r1.addDaemon(RIPng)
-            r2.addDaemon(RIPng)
-            r3.addDaemon(RIPng)
+            r1.addDaemon(RIPng, **self.ripng_kwargs)
+            r2.addDaemon(RIPng, **self.ripng_kwargs)
+            r3.addDaemon(RIPng, **self.ripng_kwargs)
 
         super().build(*args, **kwargs)
 
@@ -131,15 +139,21 @@ expected_paths = {
 }
 
 
+# Fast RIPng timers keep route propagation in the seconds instead of the
+# default 30s update cycle. The flush test below deliberately uses the slow
+# timers to exercise route timeout/removal.
+RIPNG_FAST_TIMERS = {"update_timer": 2, "timeout_timer": 6, "garbage_timer": 6}
+
+
 @require_root
-@pytest.mark.parametrize("topo", [
-    MinimalRIPngNet,
-    RIPngNetwork,
-    RIPngNetworkAdjust
-])
-def test_ripng_examples(topo):
+@pytest.mark.parametrize("topo,kwargs", [
+    (MinimalRIPngNet, RIPNG_FAST_TIMERS),
+    (RIPngNetwork, RIPNG_FAST_TIMERS),
+    (RIPngNetworkAdjust, RIPNG_FAST_TIMERS)
+], ids=lambda t: t.__name__)
+def test_ripng_examples(topo, kwargs):
     try:
-        net = IPNet(topo=topo())
+        net = IPNet(topo=topo(**kwargs))
         net.start()
         assert_connectivity(net, v6=True)
         for path in expected_paths[topo.__name__]:
@@ -153,7 +167,7 @@ def test_ripng_examples(topo):
 @require_root
 def test_ripng_adjust():
     try:
-        net = IPNet(topo=RIPngNetworkAdjust(lr1r5_cost=5))
+        net = IPNet(topo=RIPngNetworkAdjust(lr1r5_cost=5, **RIPNG_FAST_TIMERS))
         net.start()
         assert_connectivity(net, v6=True)
         for path in expected_paths["RIPngNetworkAdjust-mod"]:

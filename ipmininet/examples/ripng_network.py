@@ -7,6 +7,20 @@ from ipmininet.router.config.ripng import RIPng
 
 class RIPngNetwork(IPTopo):
 
+    def __init__(self, update_timer=None, timeout_timer=None,
+                 garbage_timer=None, *args, **kwargs):
+        """:param update_timer: RIPng update interval in seconds (default 30)
+        :param timeout_timer: RIPng route timeout in seconds (default 180)
+        :param garbage_timer: RIPng route garbage timer in seconds (default 120)"""
+        self.ripng_kwargs = {}
+        if update_timer is not None:
+            self.ripng_kwargs['update_timer'] = update_timer
+        if timeout_timer is not None:
+            self.ripng_kwargs['timeout_timer'] = timeout_timer
+        if garbage_timer is not None:
+            self.ripng_kwargs['garbage_timer'] = garbage_timer
+        super().__init__(*args, **kwargs)
+
     def build(self, *args, **kwargs):
         """
         +-----+     +-----+  2  +-----+     +-----+     +-----+
@@ -56,10 +70,10 @@ class RIPngNetwork(IPTopo):
         self.addSubnet(nodes=[r4, h4], subnets=["2042:44::/64"])
         self.addSubnet(nodes=[r5, h5], subnets=["2042:55::/64"])
 
-        r1.addDaemon(RIPng)
-        r2.addDaemon(RIPng)
-        r3.addDaemon(RIPng)
-        r4.addDaemon(RIPng)
-        r5.addDaemon(RIPng)
+        r1.addDaemon(RIPng, **self.ripng_kwargs)
+        r2.addDaemon(RIPng, **self.ripng_kwargs)
+        r3.addDaemon(RIPng, **self.ripng_kwargs)
+        r4.addDaemon(RIPng, **self.ripng_kwargs)
+        r5.addDaemon(RIPng, **self.ripng_kwargs)
 
         super().build(*args, **kwargs)

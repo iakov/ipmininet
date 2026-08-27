@@ -9,7 +9,9 @@ from ipmininet.router.config import RouterConfig
 class RIPngNetworkAdjust(IPTopo):
 
     def __init__(self, lr1r2_cost=1, lr1r3_cost=1, lr1r5_cost=1, lr2r3_cost=1,
-                 lr2r4_cost=1, lr2r5_cost=1, lr4r5_cost=1, *args, **kwargs):
+                 lr2r4_cost=1, lr2r5_cost=1, lr4r5_cost=1,
+                 update_timer=None, timeout_timer=None, garbage_timer=None,
+                 *args, **kwargs):
         """
         :param lr1r2_cost: Cost of link between R1 and R2
         :param lr1r3_cost: Cost of link between R1 and R3
@@ -18,6 +20,9 @@ class RIPngNetworkAdjust(IPTopo):
         :param lr2r4_cost: Cost of link between R2 and R4
         :param lr2r5_cost: Cost of link between R2 and R5
         :param lr4r5_cost: Cost of link between R4 and R5
+        :param update_timer: RIPng update interval in seconds (default 30)
+        :param timeout_timer: RIPng route timeout in seconds (default 180)
+        :param garbage_timer: RIPng route garbage timer in seconds (default 120)
         """
 
         self.lr1r2_cost = int(lr1r2_cost)
@@ -27,6 +32,13 @@ class RIPngNetworkAdjust(IPTopo):
         self.lr2r4_cost = int(lr2r4_cost)
         self.lr2r5_cost = int(lr2r5_cost)
         self.lr4r5_cost = int(lr4r5_cost)
+        self.ripng_kwargs = {}
+        if update_timer is not None:
+            self.ripng_kwargs['update_timer'] = update_timer
+        if timeout_timer is not None:
+            self.ripng_kwargs['timeout_timer'] = timeout_timer
+        if garbage_timer is not None:
+            self.ripng_kwargs['garbage_timer'] = garbage_timer
         super().__init__(*args, **kwargs)
 
     def build(self, *args, **kwargs):
@@ -57,11 +69,11 @@ class RIPngNetworkAdjust(IPTopo):
         r1, r2, r3, r4, r5 = self.addRouters('r1', 'r2', 'r3', 'r4', 'r5',
                                              use_v4=False, use_v6=True,
                                              config=RouterConfig)
-        r1.addDaemon(RIPng)
-        r2.addDaemon(RIPng)
-        r3.addDaemon(RIPng)
-        r4.addDaemon(RIPng)
-        r5.addDaemon(RIPng)
+        r1.addDaemon(RIPng, **self.ripng_kwargs)
+        r2.addDaemon(RIPng, **self.ripng_kwargs)
+        r3.addDaemon(RIPng, **self.ripng_kwargs)
+        r4.addDaemon(RIPng, **self.ripng_kwargs)
+        r5.addDaemon(RIPng, **self.ripng_kwargs)
 
         h1 = self.addHost('h1')
         h3 = self.addHost('h3')
