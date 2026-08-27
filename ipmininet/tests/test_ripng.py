@@ -150,7 +150,7 @@ RIPNG_FAST_TIMERS = {"update_timer": 2, "timeout_timer": 6, "garbage_timer": 6}
     (MinimalRIPngNet, RIPNG_FAST_TIMERS),
     (RIPngNetwork, RIPNG_FAST_TIMERS),
     (RIPngNetworkAdjust, RIPNG_FAST_TIMERS)
-], ids=lambda t: t.__name__)
+], ids=lambda v: v.__name__ if isinstance(v, type) else "fast")
 def test_ripng_examples(topo, kwargs):
     try:
         net = IPNet(topo=topo(**kwargs))
