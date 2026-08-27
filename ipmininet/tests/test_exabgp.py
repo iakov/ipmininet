@@ -13,7 +13,7 @@ from ipmininet.clean import cleanup
 from ipmininet.examples.exabgp_prefix_injector import ExaBGPTopoInjectPrefixes
 from ipmininet.ipnet import IPNet
 from ipmininet.router.config import BGPRoute, BGPAttribute, ExaList
-from ipmininet.tests import require_root
+from ipmininet.tests import require_root, require_exabgp
 
 exa_routes = {
     'ipv4': [
@@ -152,11 +152,12 @@ def check_as_path(as_path_rib: str, as_path_us: ExaList):
         format(expected=as_rib_us, received=as_path_rib)
 
     for idx, asn_received, asn_expected in zip(range(len(as_rib)), as_rib, as_rib_us):
-        assert asn_received == asn_received, "Bad ASN at index {index}. Expected AS{expected}. Received AS{received}". \
+        assert asn_received == asn_expected, "Bad ASN at index {index}. Expected AS{expected}. Received AS{received}". \
             format(index=idx, expected=asn_expected, received=asn_received)
 
 
 @require_root
+@require_exabgp
 @pytest.mark.parametrize('topo_test,frr_bgp_node', [
     (ExaBGPTopoInjectPrefixes(routes=exa_routes), 'as2'),  # default IPs, custom routes,
     (ExaBGPTopoInjectPrefixes(), 'as2'),  # default IPs, random routes

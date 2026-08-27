@@ -10,7 +10,7 @@ from ipmininet.router import OpenrRouter
 from ipmininet.router.config import OpenrRouterConfig
 from ipmininet.tests.utils import assert_connectivity
 
-from . import require_root
+from . import require_root, require_openr
 
 
 class SimpleOpenrTopo(IPTopo):
@@ -34,6 +34,7 @@ class SimpleOpenrTopo(IPTopo):
 
 
 @require_root
+@require_openr
 def test_openr_connectivity():
     try:
         net = IPNet(topo=SimpleOpenrTopo())
@@ -45,6 +46,7 @@ def test_openr_connectivity():
 
 
 @require_root
+@require_openr
 def test_logdir_creation():
     try:
         topo = SimpleOpenrTopo()
@@ -64,6 +66,7 @@ def test_logdir_creation():
 
 
 @require_root
+@require_openr
 def test_tmp_isolation():
     try:
         net = IPNet(topo=SimpleOpenrTopo())

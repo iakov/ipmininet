@@ -190,6 +190,11 @@ You can also run a single test by passing options to pytest:
 
     sudo pytest ipmininet/tests/test_sshd.py --fulltrace
 
+Some tests are skipped conditionally based on the environment (e.g. running
+as a non-root user, or a missing routing daemon). See the "Test-skip policy"
+comment at the top of ``ipmininet/tests/__init__.py`` for the full matrix and
+reasons; skipped tests and their reasons are shown with ``pytest -rs``.
+
 
 Building the documentation
 --------------------------

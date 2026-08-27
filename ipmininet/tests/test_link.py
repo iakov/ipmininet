@@ -26,9 +26,9 @@ from ipmininet.tests import require_root
     (["100.64.0.1/32", "10.0.0.1/8"],
      ["100.64.0.1/32", "10.0.0.1/8"]),  # Public before private
     (["2001::1/16", "2002::1/16"],
-     ["2002::1/16", "2001::1/16"]),  # Bigger network value first
+     ["2001::1/16", "2002::1/16"]),  # Global before private (2002::/16 is 6to4)
     (["2002::1/16", "2001::1/16"],
-     ["2002::1/16", "2001::1/16"]),  # Bigger network value first
+     ["2001::1/16", "2002::1/16"]),  # Global before private (2002::/16 is 6to4)
     (["2001::1/16", "2001::2/16"],
      ["2001::2/16", "2001::1/16"]),  # Bigger IP value first
     (["2001::2/16", "2001::1/16"],
