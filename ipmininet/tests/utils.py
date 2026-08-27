@@ -14,14 +14,17 @@ from ipmininet.ipswitch import IPSwitch
 from ipmininet.host.config.named import DNSRecord
 
 
-def traceroute(net: IPNet, src: str, dst_ip: str, timeout=300) -> List[str]:
+def traceroute(net: IPNet, src: str, dst_ip: str, timeout=300,
+               poll=1.0) -> List[str]:
     require_cmd("traceroute", help_str="traceroute is required to run tests")
 
     t = 0
     old_path_ips = []  # type: List[str]
     same_path_count = 0
     white_space = re.compile(r" +")
-    while t != timeout / 5.:
+    # How many iterations fit within the timeout at the given poll interval
+    max_iter = int(timeout / poll)
+    while t != max_iter:
         out = net[src].cmd(["traceroute", "-w", "0.05", "-q", "1", "-n",
                             "-m", len(net.routers) + len(net.hosts), dst_ip])
         lines = out.split("\n")[1:-1]
@@ -40,7 +43,9 @@ def traceroute(net: IPNet, src: str, dst_ip: str, timeout=300) -> List[str]:
         else:
             same_path_count = 0
             old_path_ips = []
-        time.sleep(5)
+        # Only sleep before the next poll; the iteration above returns as soon
+        # as the path is stable, so this does not add latency on success.
+        time.sleep(poll)
         t += 1
     return []
 
@@ -80,7 +85,7 @@ def assert_path(net: IPNet, expected_path: List[str], v6=False, retry=5,
                                   % (src, dst, expected_path[1:-1], path[1:-1])
 
 
-def host_connected(net: IPNet, v6=False, timeout=0.5, translate_address=True) \
+def host_connected(net: IPNet, v6=False, timeout=0.2, translate_address=True) \
         -> bool:
     require_cmd("nmap", help_str="nmap is required to run tests")
 
@@ -94,7 +99,7 @@ def host_connected(net: IPNet, v6=False, timeout=0.5, translate_address=True) \
                         else dst.defaultIntf().ip
                 else:
                     dst_ip = dst
-                cmd = "nmap%s -sn -n --max-retries 5 --max-rtt-timeout %dms %s"\
+                cmd = "nmap%s -sn -n --max-retries 0 --max-rtt-timeout %dms %s"\
                       % (" -6" if v6 else "", int(timeout * 1000), dst_ip)
                 out = src.cmd(cmd.split(" "))
                 if "0 hosts up" in out:
@@ -105,13 +110,13 @@ def host_connected(net: IPNet, v6=False, timeout=0.5, translate_address=True) \
     return True
 
 
-def assert_node_not_connected(src: IPNode, dst: IPNode, v6=False, timeout=0.5):
+def assert_node_not_connected(src: IPNode, dst: IPNode, v6=False, timeout=0.2):
     require_cmd("nmap", help_str="nmap is required to run tests")
 
     dst.defaultIntf().updateIP()
     dst.defaultIntf().updateIP6()
     dst_ip = dst.defaultIntf().ip6 if v6 else dst.defaultIntf().ip
-    cmd = "nmap%s -sn -n --max-retries 5 --max-rtt-timeout %dms %s" \
+    cmd = "nmap%s -sn -n --max-retries 0 --max-rtt-timeout %dms %s" \
           % (" -6" if v6 else "", int(timeout * 1000), dst_ip)
     out = src.cmd(cmd.split(" "))
 
@@ -122,12 +127,14 @@ def assert_node_not_connected(src: IPNode, dst: IPNode, v6=False, timeout=0.5):
 def assert_connectivity(net: IPNet, v6=False, attempts=300,
                         translate_address=True):
     t = 0
-    while t != attempts \
-            and not host_connected(net, v6=v6,
-                                   translate_address=translate_address):
-        t += 1
-        time.sleep(5)
-    assert host_connected(net, v6=v6, translate_address=translate_address),\
+    connected = False
+    while t != attempts and not connected:
+        connected = host_connected(net, v6=v6,
+                                   translate_address=translate_address)
+        if not connected:
+            t += 1
+            time.sleep(1)
+    assert connected, \
         "Cannot ping all hosts over %s" % ("IPv4" if not v6 else "IPv6")
 
 
