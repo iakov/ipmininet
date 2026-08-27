@@ -6,6 +6,10 @@ exec > >(tee "$LOGFILE") 2>&1
 
 mkdir -p /workspace/htmlcov
 
+# sshd -t requires the privilege separation directory; it is created at
+# install time but lost between the image build and the container start.
+mkdir -p /run/sshd
+
 # Start Open vSwitch if not already running
 if [ ! -e /var/run/openvswitch/db.sock ]; then
     mkdir -p /var/run/openvswitch /etc/openvswitch
