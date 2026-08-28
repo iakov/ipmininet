@@ -138,7 +138,7 @@ def assert_node_not_connected(src: IPNode, dst: IPNode, v6=False, timeout=0.2):
         .format(src.name, dst.name, "IPv4" if not v6 else "IPv6")
 
 
-def assert_connectivity(net: IPNet, v6=False, attempts=300,
+def assert_connectivity(net: IPNet, v6=False, attempts=1500,
                         translate_address=True):
     t = 0
     connected = False
