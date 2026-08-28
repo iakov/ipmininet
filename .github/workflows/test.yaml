@@ -61,6 +61,4 @@ jobs:
       - name: Run test suite
         timeout-minutes: 170
         run: |
-          sudo env "PATH=$PATH" uv run python -m pytest \
-            -v \
-            ipmininet/tests/
+          sudo env "PATH=$PATH" scripts/run-tests-parallel.sh
