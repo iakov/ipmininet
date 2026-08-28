@@ -1,0 +1,39 @@
+# Full test suite, run on master and on demand.
+#
+# Performs the full `ipmininet.install -a` and runs every test except the
+# known-broken daemons (exabgp, openr), which are skipped in their own test
+# modules. Lint/format checks are intentionally not part of this workflow
+# yet; they will be added together with the reformatting PR.
+name: Heavy test
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+jobs:
+  heavy-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+      - name: Cache venv
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+      - run: uv sync --all-extras
+      - name: Install dependencies (FRRouting, libyang, mininet)
+        timeout-minutes: 10
+        run: |
+          # PEP 668 on Ubuntu 24.04 blocks pip3 system installs; relax it.
+          export PIP_BREAK_SYSTEM_PACKAGES=1
+          sudo env "PATH=$PATH" PIP_BREAK_SYSTEM_PACKAGES=1 uv run python -m ipmininet.install -a
+      - name: Run full test suite
+        timeout-minutes: 170
+        run: |
+          sudo env "PATH=$PATH" uv run python -m pytest \
+            -v \
+            ipmininet/tests/

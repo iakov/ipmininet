@@ -52,6 +52,7 @@ def test_ipaddress_endianness(test_input, expected):
     assert int(ipaddress.ip_address(test_input)) == expected
 
 
+@require_root
 def test_ip_address_format():
     """
     Check that the output of ip address conforms to what we expect in order

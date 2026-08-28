@@ -59,6 +59,8 @@ def parse_args():
 
 def install_mininet(output_dir: str, pip_install=True):
     dist.install("git")
+    if dist.NAME in {"Ubuntu", "Debian"}:
+        dist.install("openvswitch-switch")
 
     if dist.NAME == "Fedora":
         mininet_opts = "-fnp"
@@ -69,6 +71,18 @@ def install_mininet(output_dir: str, pip_install=True):
         mininet_opts = "-a"
 
     sh("git clone https://github.com/mininet/mininet.git", cwd=output_dir)
+    if not pip_install:
+        # Minimal install: only build the mnexec binary. The full
+        # install.sh -a installs packages (e.g. pep8) that no longer exist
+        # on Ubuntu 24.04. The Python package itself is provided by uv
+        # (see pyproject.toml) and OVS comes from the openvswitch-switch
+        # apt package installed above.
+        sh("git checkout %s" % MininetVersion,
+           cwd=os.path.join(output_dir, "mininet"))
+        sh("make mnexec", cwd=os.path.join(output_dir, "mininet"))
+        sh("cp mnexec /usr/local/bin/",
+           cwd=os.path.join(output_dir, "mininet"))
+        return
     # Save valid version of mininet install script
     sh("git checkout %s" % MininetInstallCommit,
        cwd=os.path.join(output_dir, "mininet/util"))
@@ -205,6 +219,10 @@ def enable_ipv6():
         dist.install("grub-common")
 
     grub_cfg = "/etc/default/grub"
+    if not os.path.exists(grub_cfg):
+        print("Skipping IPv6 grub configuration: %s not present"
+              " (e.g. inside a container)" % grub_cfg, file=sys.stderr)
+        return
     with open(grub_cfg, "r+") as f:
         data = f.read()
         f.seek(0)

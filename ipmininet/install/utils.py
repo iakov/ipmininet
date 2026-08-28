@@ -52,7 +52,7 @@ class Distribution:
         self.pip_args = self.check_pip_version(self.PIP_CMD)
 
     def check_pip_version(self, pip: str) -> str:
-        from pkg_resources import parse_version
+        from packaging.version import parse as parse_version
 
         if find_executable(pip) is None:
             return ""

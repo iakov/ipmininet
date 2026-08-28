@@ -3,11 +3,12 @@ import os
 
 from ipmininet.clean import cleanup
 from ipmininet.ipnet import IPNet
-from . import require_root
+from . import require_root, require_mimidump
 from .utils import assert_connectivity
 from ..examples.network_capture import NetworkCaptureTopo
 
 
+@require_mimidump
 @require_root
 def test_network_capture_example():
     capture_files = ["/tmp/capture_r1.pcapng", "/tmp/capture_r2-eth0.pcapng",
