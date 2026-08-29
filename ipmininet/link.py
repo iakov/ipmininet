@@ -257,7 +257,13 @@ class IPIntf(_m.TCIntf):
            restore the saved addresses"""
         self.isUp(setUp=True)
         if restore:
-            self.setIP(self.backup_addresses[4] + self.backup_addresses[6])
+            self._refresh_addresses()
+            current = set(self.addresses[4] + self.addresses[6])
+            for ip in self.backup_addresses[4] + self.backup_addresses[6]:
+                if ip not in current:
+                    self.cmd('ip', 'address', 'add', 'dev', self.name,
+                             ip.with_prefixlen)
+            self._refresh_addresses()
             for cmd in self.restore_cmds:
                 self.node.cmd(cmd)
 
