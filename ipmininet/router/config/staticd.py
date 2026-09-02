@@ -1,11 +1,10 @@
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network, ip_network
 
-from ipmininet.router.config.zebra import QuaggaDaemon, Zebra
+from ipmininet.router.config.zebra import MgmtdBackendDaemon
 
 
-class STATIC(QuaggaDaemon):
+class STATIC(MgmtdBackendDaemon):
     NAME = "staticd"
-    DEPENDS = (Zebra,)
     KILL_PATTERNS = (NAME,)
 
     def build(self):
