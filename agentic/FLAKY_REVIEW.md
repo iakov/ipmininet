@@ -371,6 +371,34 @@ not a hand-rolled `while`/`time.sleep` loop.
 | `test_randomFailure[3]` (PR #18) | `up(restore=True)` churned addresses racing zebra/ospfd | restore only missing addrs |
 | iptables flakiness | xtables lock / restore completion | wait for lock + completion (3 commits) |
 | OSPF after link restore | no reconvergence wait | `74a6bc8` added wait |
+| `test_iptables` IPv4 ping (audit 2026-09-04) | single-shot ping right after `net.start()` (P2) — a first packet can drop under load even when not blocked | polled with `wait_until` (mirrors the IPv6-blocked check below it) |
+
+## Last audit (2026-09-04) — latent P1–P12 sweep
+
+Ran the ready-to-run audit block against the current suite; everything else
+already follows the blessed poll patterns:
+
+- **P1** hits are all inside bounded poll loops (`utils.py` `host_connected`/
+  `assert_connectivity`/`check_tcp_connectivity`) or are deliberate timing in
+  a unit test (`test_network_capture.py` growth-between-polls). No unbounded
+  fixed sleeps remain.
+- **P2** — one genuine hit fixed: `test_iptables.py` asserted a single IPv4
+  ping right after `net.start()` while the sibling IPv6-blocked check was
+  already polled. Now polled with `wait_until` (rc 0 within 30 s).
+- **P3** — `test_exabgp.py:250` `rib_routes[str_ipnet][0]` is correctly
+  preceded by `assert str_ipnet in rib_routes`; `test_tc.py` guards `intervals`
+  before indexing each `sample["sum"]`.
+- **P4/P9** — no `!=` loop sentinels; every poll loop has a `<` bound. Files
+  without a literal `timeout`/`wait_until` rely on the project-wide
+  `pytest-timeout` (600 s) and/or delegate to poll helpers that carry their own
+  `timeout` parameter.
+- **P10** — `test_srv6.py` waits on tshark's `Capturing on ...` stderr line
+  AND on the pcap file growing past its header (per the P10 lesson), not on
+  `p.poll() is None`.
+- **P11** — `test_tc.py` probes iperf3 readiness passively via `ss -ltn`; no
+  `nc -z` against the one-shot server. (`nc -z` remains only inside
+  `check_tcp_connectivity`, whose server is a re-spawning plain `nc -l`.)
+- **P12** — `test_exabgp.py` poll timeout 900 s with `@pytest.mark.timeout(1200)`.
 
 ## Ready-to-run audit block
 
