@@ -279,9 +279,10 @@ rg -n "pytest.mark.timeout" ipmininet/tests/
 ```
 
 Repo example: `test_exabgp.py` — `wait_for_expected_routes` default timeout
-`300 → 540` (120 s floor + slow-delivery margin) and the parametrized test is
-marked `@pytest.mark.timeout(1200)` so pytest-timeout's 600 s ceiling does
-not kill the legitimately-long wait.
+went `300 → 540` (anti-flaky PR) and was later hardened to **`900`** by `0ee53cb`
+(120 s floor + slow-delivery margin observed up to ~9 min under load); the
+parametrized test is marked `@pytest.mark.timeout(1200)` so pytest-timeout's
+600 s ceiling does not kill the legitimately-long wait.
 
 Fix: size poll timeouts from the *documented worst case* of the protocol, not
 the observed median; when that exceeds the project-wide `pytest-timeout`
@@ -367,11 +368,11 @@ not a hand-rolled `while`/`time.sleep` loop.
 | `test_exabgp` `KeyError` (PR #24) | 130s fixed sleep vs ExaBGP passive+delay | poll RIB via `wait_for_expected_routes` |
 | `test_srv6` 7×7 CI (anti-flaky PR) | wait_until(p.poll() is None) is a *proxy*: tshark alive ≠ capturing; even `Capturing on ...` is printed before the capture is live; a later attempt required *every* node (incl. off-path hosts) to record the measurement | probe until every pcap grows past its header (live), send one measurement, SIGINT-flush, assert it landed in the read-back; group observations per probe by time gap (P10) |
 | `test_tc` 2×2 CI (anti-flaky PR) | `nc -z` probe consumed the `iperf3 --one-off` single connection | passive `ss -ltn` check (P11) |
-| `test_exabgp` bare-metal delivery tail (anti-flaky PR) | RIB fills after ≥120 s by design; 300 s poll too tight under load | timeout 300→540 + `@pytest.mark.timeout(1200)` (P12) |
+| `test_exabgp` bare-metal delivery tail (anti-flaky PR) | RIB fills after ≥120 s by design; 300 s poll too tight under load | timeout 300→540, later hardened to 900 (`0ee53cb`) + `@pytest.mark.timeout(1200)` (P12) |
 | `test_randomFailure[3]` (PR #18) | `up(restore=True)` churned addresses racing zebra/ospfd | restore only missing addrs |
 | iptables flakiness | xtables lock / restore completion | wait for lock + completion (3 commits) |
 | OSPF after link restore | no reconvergence wait | `74a6bc8` added wait |
-| `test_iptables` IPv4 ping (audit 2026-09-04) | single-shot ping right after `net.start()` (P2) — a first packet can drop under load even when not blocked | polled with `wait_until` (mirrors the IPv6-blocked check below it) |
+| `test_iptables` IPv4 ping (audit 2026-09-04) | single-shot ping right after `net.start()` (P2) — a first packet can drop under load even when not blocked | polled with `wait_until` (mirrors the IPv6-blocked check below it); merged as #40 |
 
 ## Last audit (2026-09-04) — latent P1–P12 sweep
 
@@ -384,7 +385,8 @@ already follows the blessed poll patterns:
   fixed sleeps remain.
 - **P2** — one genuine hit fixed: `test_iptables.py` asserted a single IPv4
   ping right after `net.start()` while the sibling IPv6-blocked check was
-  already polled. Now polled with `wait_until` (rc 0 within 30 s).
+  already polled. Now polled with `wait_until` (rc 0 within 30 s). Merged as
+  **PR #40** (`2e518a4`).
 - **P3** — `test_exabgp.py:250` `rib_routes[str_ipnet][0]` is correctly
   preceded by `assert str_ipnet in rib_routes`; `test_tc.py` guards `intervals`
   before indexing each `sample["sum"]`.

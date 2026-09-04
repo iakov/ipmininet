@@ -1,8 +1,8 @@
 # CI / maintenance lessons (ipmininet)
 
-Hard-won operational knowledge from the OpenR/FRR/ExaBGP modernization and CI
-work. Kept on the `me/agentic` branch (see `AGENTS.md`), not merged to
-mimi-net/master.
+Hard-won operational knowledge from the FRR/ExaBGP modernization (and the
+earlier OpenR removal) plus CI work. Kept on the `me/agentic` branch (see
+`AGENTS.md`), not merged to mimi-net/master.
 
 ## Repo topology (remotes)
 
@@ -69,9 +69,9 @@ duplicates heavy-test.**
   compiled FRR deps cached under `/home/runner/ci-deps` keyed on
   uv.lock/pyproject/install files + OS version.
 
-## Recurring CI flake: test_srv6 `test_static_examples`
+## Resolved CI flake: test_srv6 `test_static_examples` (fixed #38)
 
-Symptom: `test_srv6.py::test_static_examples[routesN-...]` fails with
+Symptom: `test_srv6.py::test_static_examples[routesN-...]` used to fail with
 "expected the path from h6 to h4 to go through ['r6','r5','r4'] but it went
 through []" — the *same code* passes on other runners of the same commit, and
 the failing parametrization varies per run (routes0/routes1/routes4 ...). It
@@ -89,7 +89,7 @@ path assertion:
 
 Critical lesson: **do NOT "fix" this by adding `assert_connectivity(net, v6=True)`**
 — full v6 mesh never converges in that topology (hosts not on the measured
-paths, e.g. h3, stay unreachable over v6). I tried that first; all 7
+paths, e.g. h3, stay unreachable over v6). Tried that first; all 7
 parametrizations then burned the 600 s timeout (25+ min per run, both
 bare-metal and container). Wait only for the specific (src→dst) pairs the
 assertions actually exercise.

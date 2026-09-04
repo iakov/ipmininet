@@ -9,7 +9,7 @@ root `AGENTS.md` for the standing rules that govern this branch.
 | File | What it holds |
 | --- | --- |
 | `CI-LESSONS.md` | Repo topology (remotes), safe merge workflow, CI architecture & run book |
-| `NOTES.md` | Working notes: resolved flakes/fixes, deferred work, dependabot & hygiene status |
+| `NOTES.md` | Working notes: resolved flakes/fixes, resolved follow-ups, dependabot & hygiene status |
 | `session-notes.md` | End-to-end session knowledge & plans (e.g. the fix/ci-clean delivery) |
 | `FLAKY_REVIEW.md` | Flaky-test pattern catalog + audit guide (grep-able checklist) |
 
