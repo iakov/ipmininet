@@ -43,7 +43,7 @@ def require_cmd(cmd: str, help_str: str | None = None):
 
     if help_str:
         log.error(help_str)
-    raise RuntimeError(f"[{cmd}] is not available in $PATH")
+    raise RuntimeError(f"[{cmd}] is not available in $PATH")  # noqa: TRY003
 
 
 def otherIntf(intf: Intf) -> Optional["IPIntf"]:
@@ -60,14 +60,11 @@ def realIntfList(n: Node) -> list["IPIntf"]:
 def address_pair(n: Node, use_v4=True, use_v6=True) -> tuple[str | None, str | None]:
     """Returns a tuple (ip, ip6) with ip/ip6 being one of the IPv4/IPv6
     addresses of the node n"""
-    from .link import IPIntf  # Prevent circular imports
-
     v4_str = v6_str = None
     for itf in n.intfList():
-        # Mininet switches have a loopback interface
-        # declared as an Intf.
+        # Mininet switches have a loopback interface declared as an Intf.
         # This object does not have ips() or ip6s() methods.
-        if not isinstance(itf, IPIntf):
+        if not hasattr(itf, "ips"):
             continue
 
         if use_v4 and v4_str is None:
@@ -91,9 +88,9 @@ def is_subnet_of(a: IPv4Network | IPv6Network, b: IPv4Network | IPv6Network) -> 
     try:
         # Always false if one is v4 and the other is v6.
         if a.version != b.version:
-            raise TypeError(f"{a} and {b} are not of the same version")
+            raise TypeError(f"{a} and {b} are not of the same version")  # noqa: TRY003
     except AttributeError:
-        raise TypeError(
+        raise TypeError(  # noqa: TRY003
             f"Unable to test subnet containment between {a} and {b}"
         ) from None
     else:

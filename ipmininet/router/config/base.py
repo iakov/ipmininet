@@ -114,7 +114,7 @@ class NodeConfig:
             try:
                 cls, kw = cls
             except ValueError:
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Expected a tuple (Daemon, dict)  but got {cls!s}"
                 ) from None
             daemon_opts.update(kw)
@@ -124,7 +124,7 @@ class NodeConfig:
             if issubclass(cls, Daemon):
                 cls = cls(self._node, **daemon_opts)
             else:
-                raise TypeError(
+                raise TypeError(  # noqa: TRY003
                     f"Expected an object or a subclass of Daemon, got {cls} instead"
                 )
         else:
@@ -149,7 +149,7 @@ class NodeConfig:
                 key, val = value.split("=")
                 self._sysctl[key] = val
             except ValueError:
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"sysctl must be specified using `key=val` format. Ignoring {value}"
                 ) from None
 
@@ -348,7 +348,7 @@ class Daemon(metaclass=abc.ABCMeta):
                     "Couldnt render a config file(", self.template_filenames[i], ")"
                 )
                 log.error(mako.exceptions.text_error_template().render())
-                raise ValueError(
+                raise ValueError(  # noqa: TRY003
                     f"Cannot render a configuration [{self._node.name}: {self.NAME}]"
                 ) from None
         return cfg_content
@@ -439,62 +439,3 @@ class RouterDaemon(Daemon, metaclass=abc.ABCMeta):
     def set_defaults(self, defaults):
         """:param logfile: the path to the logfile for the daemon
         :param routerid: the router id for this daemon"""
-
-
-class BasicRouterConfig(RouterConfig):
-    """A basic router that will run an OSPF daemon"""
-
-    def __init__(
-        self,
-        node: "Router",
-        daemons: Iterable[DaemonOption] = (),
-        additional_daemons: Iterable[DaemonOption] = (),
-        *args,
-        **kwargs,
-    ):
-        """A simple router made of at least an OSPF daemon
-
-        :param additional_daemons: Other daemons that should be used"""
-        # Importing here to avoid circular import
-        from .ospf import OSPF
-        from .ospf6 import OSPF6
-
-        # We don't want any zebra-specific settings, so we rely on the
-        # OSPF/OSPF6 DEPENDS list for that daemon to run it with default
-        # settings. We also don't want specific settings beside the defaults,
-        # so we don't provide an instance but the class instead
-        d = list(daemons)
-        if node.use_v4:
-            d.append(OSPF)
-        if node.use_v6:
-            d.append(OSPF6)
-        d.extend(additional_daemons)
-        super().__init__(node, *args, daemons=d, **kwargs)
-
-
-class BorderRouterConfig(BasicRouterConfig):
-    """A router config that will run both OSPF and BGP, and redistribute all
-    connected router into BGP."""
-
-    def __init__(
-        self,
-        node: "Router",
-        daemons: Iterable[DaemonOption] = (),
-        additional_daemons: Iterable[DaemonOption] = (),
-        *args,
-        **kwargs,
-    ):
-        """A simple router made of at least an OSPF daemon and a BGP daemon
-
-        :param additional_daemons: Other daemons that should be used"""
-        from .bgp import AF_INET, AF_INET6, BGP
-
-        af = []
-        if node.use_v4:
-            af.append(AF_INET(redistribute=("connected", "ospf")))
-        if node.use_v6:
-            af.append(AF_INET6(redistribute=("connected", "ospf6")))
-        if af:
-            d = list(daemons)
-            d.append((BGP, {"address_families": af}))
-        super().__init__(node, *args, daemons=d, **kwargs)

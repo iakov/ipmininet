@@ -4,6 +4,7 @@ import subprocess
 import sys
 
 from distutils.spawn import find_executable
+from packaging.version import parse as parse_version
 
 
 def sh(*cmds, **kwargs) -> subprocess.Popen | None:
@@ -60,8 +61,6 @@ class Distribution:
         self.pip_args = self.check_pip_version(self.PIP_CMD)
 
     def check_pip_version(self, pip: str) -> str:
-        from packaging.version import parse as parse_version
-
         if find_executable(pip) is None:
             return ""
         p = sh(f"{pip} -V", output_stdout=False)
@@ -104,7 +103,7 @@ class Distribution:
 
     def require_pip(self):
         if find_executable(self.PIP_CMD) is None:
-            raise RuntimeError(f"Cannot find {self.PIP_CMD}")
+            raise RuntimeError(f"Cannot find {self.PIP_CMD}")  # noqa: TRY003
 
 
 class Ubuntu(Distribution):
