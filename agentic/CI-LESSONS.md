@@ -60,10 +60,11 @@ duplicates heavy-test.**
 - Coverage gate: `pyproject.toml [tool.coverage.report] fail_under = 85`,
   `branch = true`. heavy-test is the enforcement point; coverage XML/HTML
   uploaded as artifact `coverage-full` and to Codecov (`slug` pinned to repo).
-  Raised 84 → 85 in #41 (full suite sits at ~85.7%, so ~0.7pp headroom; do
-  not re-raise without re-measuring). The heavy-test gate runs only on master
-  push / dispatch, so a PR that changes coverage-sensitive code should be
-  pre-validated by dispatching heavy-test on the fork branch before merging.
+  Raised 84 → 85 in #41; #43 lifted the measured full-suite total to 88.38%
+  (~3.4pp headroom, so re-raising the gate now has room). The heavy-test gate
+  runs only on master push / dispatch, so a PR that changes
+  coverage-sensitive code should be pre-validated by dispatching heavy-test
+  on the fork branch before merging.
 - Per-test timeout: `pyproject.toml [tool.pytest.ini_options] timeout = 600`
   (signal method). A single test that would wait longer gets killed at 600s.
 - Container run entrypoint `scripts/ci-test.sh`: creates `/run/sshd` and

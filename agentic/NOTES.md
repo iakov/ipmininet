@@ -135,6 +135,19 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   per-file-ignore. Any new magic constant used in a comparison now fails
   `ruff check .` in CI/pre-commit. Scope caveat: PLR2004 only covers
   *comparisons*; indexes/defaults/assignments are out of linter scope.
+- **TRY003 partially paid down** (PR #44, commit `1ac7cc9`): for the seven
+  files whose *only* per-file-ignore was TRY003, each raise message was moved
+  into a dedicated exception class subclassing the previously-raised builtin
+  (`topologydb.py`: NoSuchNodeError/NoSuchLinkError/NotARouterError;
+  `router/config/iptables.py`: UnknownTable/Chain/DefaultPolicy/
+  RuleParameterError; `router/config/exabgp.py`: NotHexRepresentableError,
+  UnknownBGPAttributeError; `node_description.py`: LinkIndexError,
+  NodeNotOnLinkError; `iptopo.py`: UnknownTopologyAttributeError;
+  `overlay.py`: NoCaptureAnchorError; `tests/test_radv.py`: uses
+  `pytest.fail`). Result: TRY003 count 46 -> **32**, seven ignore entries
+  dropped. The 32 remaining TRY003 live in files that also carry
+  PLR091x/PLC0415 ignores (ipnet, srv6, zebra, bgp, base, utils,
+  install/utils, tests/utils) and stay deferred as a group.
 
 ### ExaBGP CI flake (fixed — PR #24, branch `fix/exabgp-rib-timing-flake`)
 - Symptom: `test` job of run 33305086380 failed `test_example_exabgp
@@ -167,20 +180,34 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `ca5cc37` (PR #42;
-  ff + pushed). Upstream released **v1.2.7** (2026-08-31).
-- Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`): full-suite
-  heavy-test reports ~85.7%; enforced only there (rootless PR job uses
-  `--cov-fail-under=0`).
+- Fork `master` resynced to `mimi-net/master` through `1ac7cc9` (PRs #43 +
+  #44; ff + pushed). Upstream released **v1.2.7** (2026-08-31).
+- Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
+  (commit `c308745`) added rootless unit tests for the three ~0% modules and
+  pushed the measured full-suite total from ~85.7% to **88.38%** (TOTAL 3745
+  stmts, 368 missed -> ~3.4pp headroom over the gate). dnsmasq/dhcprelay now
+  100%; `ipovs_switch.py` ~47%. Gate enforced only by heavy-test (rootless PR
+  job uses `--cov-fail-under=0`). Lesson: the heavy-test coverage gate only
+  counts modules imported during the *explicit file list* in
+  `scripts/run-tests-parallel.sh`, so new test files MUST be appended to that
+  list (and, if rootless-safe, to the 4-file list in `.github/workflows/
+  test.yaml`). Lesson 2: `tmp_path`-using tests must not land as the last
+  module on an xdist worker (basetemp race) — prefer `tempfile.mkdtemp`; and
+  beware substring asserts (`"stp_enable=true" in "rstp_enable=true"`).
 - Deleted merged fork branches (local + remote): `fix/link-restore-no-address-churn`,
   `ci/run-capture-tests`, `feat/network-capture-readiness`, `ci/fix-container-image`,
   `deps/mako-bump-and-sphinx-mdinclude`, `chore/ubuntu-2604` (#32),
   `ci/codecov-slug` (#33), `fix/iptables-ipv4-poll-wait` (#40),
-  `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42).
+  `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42),
+  `chore/uncovered-daemon-tests` (#43), `chore/try003-exceptions` (#44).
+  NOTE: `gh pr merge --delete-branch` does NOT delete the fork head branch
+  (head repo is `iakov`); the manual `git push origin --delete` is required.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Deleted stale local `hotfix-ci`. Kept `cnp3` remote (original upstream ref).
 - `origin` now holds only `master` + `me/agentic` (knowledge branch).
+- New upstream knowledge doc: `agentic/cnp3-open-issues.md` (triage of the 16
+  open cnp3 issues; fork-only, never push upstream).
 
 ## Podman-machine lesson (CPU waste)
 - 4 orphaned `yes` load-generators (root, from flake-repro CPU saturation,
