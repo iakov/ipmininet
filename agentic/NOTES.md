@@ -145,9 +145,36 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   NodeNotOnLinkError; `iptopo.py`: UnknownTopologyAttributeError;
   `overlay.py`: NoCaptureAnchorError; `tests/test_radv.py`: uses
   `pytest.fail`). Result: TRY003 count 46 -> **32**, seven ignore entries
-  dropped. The 32 remaining TRY003 live in files that also carry
-  PLR091x/PLC0415 ignores (ipnet, srv6, zebra, bgp, base, utils,
-  install/utils, tests/utils) and stay deferred as a group.
+  dropped.
+- **All PLR/PLC/TRY003 per-file-ignores removed** (PRs #45 + #46, commits
+  `0188094` + `04e6f7d`). Policy now: no file-wide architectural-rule
+  ignores remain in `pyproject.toml` (only the two un-reflowable E501
+  exceptions). Every remaining violation is either refactored or justified
+  with a bare rule-tag inline `# noqa` (no prose) on the deliberate site:
+  - PR #45 real refactors: split `sr_path` in `tests/test_srv6.py` (was
+    63 stmts / 21 branches), split `Named.build_reverse_zone` +
+    `DNSZone.apply` in `host/config/named.py`, and extracted
+    `IPNet._ping_addressing` out of `IPNet.ping` — cleared PLR0912/PLR0915.
+  - PR #46 real fixes (PLC0415): hoisted `packaging.version.parse` to the
+    top of `install/utils.py`; `utils.address_pair` now duck-types on
+    `hasattr(itf, "ips")` (dropped the lazy `.link` import); moved
+    `BasicRouterConfig`/`BorderRouterConfig` out of `router/config/base.py`
+    into the new leaf `router/config/routing.py` (imports OSPF/OSPF6/BGP at
+    module level; re-exported unchanged via `router.config` — nothing
+    imported them from `.base` directly, verified). base.py split also
+    cleared the last PLC0415 sites.
+  - PR #46 inline noqa: TRY003 on the **32** remaining bare raises (they
+    are public/daemon-facing; exception-class churn not worth it), PLR0913/
+    PLR0917 on the **14** over-parameterized-but-stable public config
+    constructors (`IPNet.__init__`/`addLink`/`_allocate_subnets`, `IPNode`,
+    `DNSZone.__init__`, `IPSwitch`, `IPOVSSwitch`, `SRv6`, `BGP.filter`,
+    `RouteMapEntry.__init__`, `tests.utils.assert_path`/
+    `check_tcp_connectivity`, the two `examples/*_adjust.py`), and PLR0911
+    on `link.address_comparator`. `ruff check .` clean, RUF100 confirms no
+    unused noqa.
+  - Lesson: inline `# noqa` on a multi-line `raise`/def must sit on the
+    *diagnostic* line (the `raise`/`def` opening line), not the closing
+    paren; keep such lines under 88 (wrap the message if needed).
 
 ### ExaBGP CI flake (fixed — PR #24, branch `fix/exabgp-rib-timing-flake`)
 - Symptom: `test` job of run 33305086380 failed `test_example_exabgp
@@ -180,13 +207,16 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `1ac7cc9` (PRs #43 +
-  #44; ff + pushed). Upstream released **v1.2.7** (2026-08-31).
+- Fork `master` resynced to `mimi-net/master` through `04e6f7d` (PRs #43..#46;
+  ff + pushed). Upstream released **v1.2.7** (2026-08-31). `origin` now holds
+  only `master` + `me/agentic` (knowledge branch).
 - Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
   (commit `c308745`) added rootless unit tests for the three ~0% modules and
   pushed the measured full-suite total from ~85.7% to **88.38%** (TOTAL 3745
   stmts, 368 missed -> ~3.4pp headroom over the gate). dnsmasq/dhcprelay now
-  100%; `ipovs_switch.py` ~47%. Gate enforced only by heavy-test (rootless PR
+  100%; `ipovs_switch.py` ~47%. PRs #45/#46 were behavior-preserving
+  refactors, so master heavy-test stays ~88.38% (both post-merge heavy-test
+  runs green). Gate enforced only by heavy-test (rootless PR
   job uses `--cov-fail-under=0`). Lesson: the heavy-test coverage gate only
   counts modules imported during the *explicit file list* in
   `scripts/run-tests-parallel.sh`, so new test files MUST be appended to that
@@ -199,13 +229,16 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   `deps/mako-bump-and-sphinx-mdinclude`, `chore/ubuntu-2604` (#32),
   `ci/codecov-slug` (#33), `fix/iptables-ipv4-poll-wait` (#40),
   `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42),
-  `chore/uncovered-daemon-tests` (#43), `chore/try003-exceptions` (#44).
+  `chore/uncovered-daemon-tests` (#43), `chore/try003-exceptions` (#44),
+  `refactor/test-srv6-and-config-helpers` (#45), `refactor/lint-noqa-sweep`
+  (#46).
   NOTE: `gh pr merge --delete-branch` does NOT delete the fork head branch
   (head repo is `iakov`); the manual `git push origin --delete` is required.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
+- Scratch files: only the git-ignored `.tmp/` under the repo root (never
+  `/tmp`) per user rule; `gh-token.txt` there is a credential, never commit.
 - Deleted stale local `hotfix-ci`. Kept `cnp3` remote (original upstream ref).
-- `origin` now holds only `master` + `me/agentic` (knowledge branch).
 - New upstream knowledge doc: `agentic/cnp3-open-issues.md` (triage of the 16
   open cnp3 issues; fork-only, never push upstream).
 

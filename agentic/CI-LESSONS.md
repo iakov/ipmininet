@@ -170,3 +170,29 @@ gh run rerun <run> -R mimi-net/ipmininet --failed      # rerun only failed
 - Coverage-instrumented runs are slower and expose timing flakes that the
   non-coverage bare-metal run won't. If a flake appears only in heavy-test,
   it is timing-sensitive by nature.
+
+## Lint-debt final cleanup (PRs #45 + #46, commits 0188094 + 04e6f7d)
+
+- PR #45 = real refactors (split `sr_path` in `tests/test_srv6.py`,
+  `Named.build_reverse_zone`/`DNSZone.apply`, `IPNet.ping` via a new
+  `_ping_addressing`). PR #46 = PLC0415 code fixes + inline noqa. Both merged
+  green on the first CI pass.
+- Safe split pattern used to clear PLC0415 without breaking imports: move the
+  offending classes into a NEW leaf module (so it may import the daemon
+  configs at module level) and re-export them unchanged from the package
+  `__init__`. Before doing so, `rg` that nothing imports the classes from the
+  old `.base` path directly — only the package path — then keep base lean.
+- `ruff check .` by default flags unused noqa (RUF100): if it passes, every
+  inline `# noqa` matches a live diagnostic — use it to validate the sweep
+  after bulk-adding noqa comments.
+- Inline-noqa placement rules learned while sweeping 47 sites:
+  - The comment must be on the *diagnostic* line (the `raise`/`def` opening
+    line for multi-line statements), not the closing paren.
+  - Appending `# noqa` can push a line past 88 → E501. For single-line raises
+    that overflow, rewrap to `raise X(  # noqa: TRY003` + message on its own
+    line + `) [from None]` (ruff format accepts this form).
+  - Combining rules on one tag, e.g. `# noqa: PLR0913, PLR0917`, keeps the
+    diff small; keep the tag bare (no prose).
+- Relying on ruff JSON output (`.venv/bin/ruff check . --output-format json`)
+  makes bulk noqa insertion precise (file/row/code). Scratch scripts live in
+  the git-ignored `.tmp/` (only `.tmp`, never `/tmp`).
