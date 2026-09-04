@@ -126,6 +126,15 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
 - `.git-blame-ignore-revs` was added (`c7fc045`, auto-fix hash) and then
   pointed at the *merged* auto-fix hash in `0ee53cb` (PR #27).
 - pre-commit not run locally (needs network); config validated by reading.
+- **PLR2004 now enforced with zero per-file-ignores** (PRs #41 + #42):
+  PR #41 introduced `IP_V4`/`IP_V6` in `ipmininet/utils.py` and named the
+  product `version == 4/6` comparisons plus the legacy `LinkDescription`
+  0/1/3 indexes; PR #42 named the last test/example magic constants
+  (`MIN_RESERVED_TABLE`, `MAX_PREFIXES_PER_AFI`, prefix-length, probe-window
+  and convergence constants) and deleted every remaining `PLR2004`
+  per-file-ignore. Any new magic constant used in a comparison now fails
+  `ruff check .` in CI/pre-commit. Scope caveat: PLR2004 only covers
+  *comparisons*; indexes/defaults/assignments are out of linter scope.
 
 ### ExaBGP CI flake (fixed — PR #24, branch `fix/exabgp-rib-timing-flake`)
 - Symptom: `test` job of run 33305086380 failed `test_example_exabgp
@@ -158,12 +167,16 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `2e518a4` (PR #40;
+- Fork `master` resynced to `mimi-net/master` through `ca5cc37` (PR #42;
   ff + pushed). Upstream released **v1.2.7** (2026-08-31).
+- Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`): full-suite
+  heavy-test reports ~85.7%; enforced only there (rootless PR job uses
+  `--cov-fail-under=0`).
 - Deleted merged fork branches (local + remote): `fix/link-restore-no-address-churn`,
   `ci/run-capture-tests`, `feat/network-capture-readiness`, `ci/fix-container-image`,
   `deps/mako-bump-and-sphinx-mdinclude`, `chore/ubuntu-2604` (#32),
-  `ci/codecov-slug` (#33), `fix/iptables-ipv4-poll-wait` (#40).
+  `ci/codecov-slug` (#33), `fix/iptables-ipv4-poll-wait` (#40),
+  `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42).
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Deleted stale local `hotfix-ci`. Kept `cnp3` remote (original upstream ref).
