@@ -215,8 +215,9 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   pushed the measured full-suite total from ~85.7% to **88.38%** (TOTAL 3745
   stmts, 368 missed -> ~3.4pp headroom over the gate). dnsmasq/dhcprelay now
   100%; `ipovs_switch.py` ~47%. PRs #45/#46 were behavior-preserving
-  refactors, so master heavy-test stays ~88.38% (both post-merge heavy-test
-  runs green). Gate enforced only by heavy-test (rootless PR
+  refactors, so master heavy-test stays ~88% (both post-merge heavy-test
+  runs green; final master run `33930693303` = TOTAL 3760 stmts, 367 missed,
+  88%). Gate enforced only by heavy-test (rootless PR
   job uses `--cov-fail-under=0`). Lesson: the heavy-test coverage gate only
   counts modules imported during the *explicit file list* in
   `scripts/run-tests-parallel.sh`, so new test files MUST be appended to that
