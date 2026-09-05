@@ -207,7 +207,7 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `04e6f7d` (PRs #43..#46;
+- Fork `master` resynced to `mimi-net/master` through `2dd70d0` (PRs #43..#47;
   ff + pushed). Upstream released **v1.2.7** (2026-08-31). `origin` now holds
   only `master` + `me/agentic` (knowledge branch).
 - Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
@@ -232,9 +232,36 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42),
   `chore/uncovered-daemon-tests` (#43), `chore/try003-exceptions` (#44),
   `refactor/test-srv6-and-config-helpers` (#45), `refactor/lint-noqa-sweep`
-  (#46).
+  (#46), `feat/coverage-90-scenarios` (#47).
   NOTE: `gh pr merge --delete-branch` does NOT delete the fork head branch
   (head repo is `iakov`); the manual `git push origin --delete` is required.
+- **Coverage gate 85 → 90 via scenario tests** (PR #47, merge `2dd70d0`). No
+  white-box unit tests: added rootless scenario modules
+  `test_policy_config_scenarios.py` (zebra routing-policy DSL: ACLs/prefix
+  lists/route-maps merge-update lifecycle, sysctl `key=val`, ConfigDict,
+  require_cmd) and `test_topo_scenarios.py` (IPTopo DSL, Subnet overlay applied
+  via `topo.build()`, NetworkCapture no-anchor) plus error/API corner-cases in
+  `test_topologydb.py` (NoSuchNode/Link/Router raises, empty DB) and
+  `test_linkfailure.py` (ping corner cases, bogus failure plans). Measured on
+  branch dispatches (fork workflow_dispatch → `gh workflow run heavy-test.yaml
+  --repo iakov/ipmininet --ref <branch>`): final TOTAL blended **90.9%**
+  (statements 3474/3760, arcs 943/1100) vs 88% before → gate 90 now has ~1.4pp
+  headroom (round() gate passes ≥89.5). Enforcement bug found & fixed in
+  `heavy-test.yaml`: `coverage report -m` was NOT last in the sudo `bash -c`
+  (no `set -e`), so a sub-threshold gate exited 0; reordered so `report -m`
+  runs last. Also added `workflow_dispatch` to `test.yaml` + `container-test.yaml`
+  so any branch can run the full suite pre-merge. Master gated heavy-test
+  post-merge (`33977424957`) green.
+  - Gotchas from rootful CI iterations: (1) `net['h1'].intf('r1')` raises
+    KeyError — mininet indexes interfaces by their own name (`h1-eth0`), not
+    peer node; resolve via `db.interfaces()` names or `connectionsTo`. (2)
+    Before `net.start()`, `IPIntf.ip`/record formats differ, and
+    `str_ip in IPv4Network` blows up (`'str' has no attribute '_version'`) —
+    compare `ip_interface(...)` objects instead. (3) Prefer DB-driven lookups
+    over guessing `rN-ethN` indices when a router has several neighbors.
+  - Latent bug noticed (NOT fixed, out of scope): zebra `PrefixListEntry` for
+    `"any"` returns early without setting `.ge`, so `entry.ge` raises
+    AttributeError on any-entries while non-any entries have `.ge is None`.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
