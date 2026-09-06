@@ -207,9 +207,10 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `bc9dca2` (PRs #43..#49;
-  ff + pushed). Upstream released **v1.2.7** (2026-08-31). `origin` now holds
-  only `master` + `me/agentic` (knowledge branch).
+- Fork `master` resynced to `mimi-net/master` through `d3ce325` (PRs #43..#50;
+  ff + pushed). **v1.3.0 released** (2026-09-06, tag `v1.3.0` on mimi-net;
+  release notes https://github.com/mimi-net/ipmininet/releases/tag/v1.3.0).
+  `origin` now holds only `master` + `me/agentic` (knowledge branch).
 - Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
   (commit `c308745`) added rootless unit tests for the three ~0% modules and
   pushed the measured full-suite total from ~85.7% to **88.38%** (TOTAL 3745
@@ -304,6 +305,20 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   first broadcast domain — which also breaks the DNS zone-server resolution
   that relies on `find_node` (`7ec0587`). Full PR CI green (test 24m47s,
   container-test 24m51s).
+- **v1.3.0 released** (PR #50 `d3ce325` = version bump + release-prep; tag
+  `v1.3.0`). Version choice rationale: FRR `7.5 -> 10.7.1` (mgmtd configs,
+  FRR >= 9) and ExaBGP `4.2.25 -> 5.0.13` (apt -> pip) raise the *provisioned
+  daemon floor* and require re-running `sudo python -m ipmininet.install -af`,
+  but the Python API and the `requires-python >= 3.12` floor are unchanged, so
+  strict SemVer argues **MINOR not MAJOR**. Stale metadata cleaned (classifiers
+  trimmed to 3.12, dead py3.7 Jenkins badges dropped, `uv.lock` regenerated).
+  Post-merge master heavy-test `34047498609` + container-test `34047498534`
+  green.
+- **DEFERRED (1.3.1 prep): re-open the cnp3 open-issue triage** from
+  `agentic/cnp3-open-issues.md` against the FRR 10.7.1 + ExaBGP 5 stack.
+  Start with #126 (exabgp hang-after-link-flap repro) and #130 (OSPF6D
+  dry-run config-check failure), then confirm-and-close #107/#121/#128. Record
+  outcomes in this file. (User memo, 2026-09-06.)
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
