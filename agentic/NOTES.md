@@ -207,7 +207,7 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `2dd70d0` (PRs #43..#47;
+- Fork `master` resynced to `mimi-net/master` through `cac375b` (PRs #43..#48;
   ff + pushed). Upstream released **v1.2.7** (2026-08-31). `origin` now holds
   only `master` + `me/agentic` (knowledge branch).
 - Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
@@ -232,7 +232,8 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   `chore/coverage-85-lint-cleanup` (#41), `chore/no-magic-values` (#42),
   `chore/uncovered-daemon-tests` (#43), `chore/try003-exceptions` (#44),
   `refactor/test-srv6-and-config-helpers` (#45), `refactor/lint-noqa-sweep`
-  (#46), `feat/coverage-90-scenarios` (#47).
+  (#46), `feat/coverage-90-scenarios` (#47),
+  `fix/zebra-any-entry-and-coverage-headroom` (#48).
   NOTE: `gh pr merge --delete-branch` does NOT delete the fork head branch
   (head repo is `iakov`); the manual `git push origin --delete` is required.
 - **Coverage gate 85 → 90 via scenario tests** (PR #47, merge `2dd70d0`). No
@@ -262,6 +263,21 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   - Latent bug noticed (NOT fixed, out of scope): zebra `PrefixListEntry` for
     `"any"` returns early without setting `.ge`, so `entry.ge` raises
     AttributeError on any-entries while non-any entries have `.ge is None`.
+- **Coverage 90 → 92 and the zebra `PrefixListEntry("any")` bug fixed** (PR #48,
+  merge `cac375b`; branch `fix/zebra-any-entry-and-coverage-headroom`). Fixed
+  the latent bug flagged above: `PrefixListEntry("any")` now sets `.ge = None`
+  instead of returning early (`60312d4`). Coverage: rootless scenario tests
+  `test_exabgp_model_scenarios.py` (ExaBGP attribute model), link-description
+  coverage, and `_capture_header_size` tests (`8d0c906`); blended TOTAL measured
+  on the branch (fork dispatch `33998840057`) at **91.77%** and confirmed on
+  master heavy-test post-merge (`34001124763`): **TOTAL 92%**, 285 passed.
+  Gotcha hit on the way: the first fork dispatch (`33996841925`) errored on the
+  3 new capture-header tests at session wrap-up — they were the suite's only
+  `tmp_path` users, and xdist workers run in a private mount namespace with a
+  fresh `/tmp` (`scripts/py-unshare.sh`), so pytest's basetemp does not survive
+  into the worker. Rewrote them to `tempfile.TemporaryDirectory()` (the
+  convention already documented in `test_network_capture.py`), commit `2d497ba`;
+  full PR CI green, master resynced to `cac375b`.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
