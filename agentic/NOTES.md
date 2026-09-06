@@ -207,7 +207,7 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `cac375b` (PRs #43..#48;
+- Fork `master` resynced to `mimi-net/master` through `bc9dca2` (PRs #43..#49;
   ff + pushed). Upstream released **v1.2.7** (2026-08-31). `origin` now holds
   only `master` + `me/agentic` (knowledge branch).
 - Coverage gate raised 84 → **85** (PR #41, commit `13c01c0`); then PR #43
@@ -278,6 +278,32 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   into the worker. Rewrote them to `tempfile.TemporaryDirectory()` (the
   convention already documented in `test_network_capture.py`), commit `2d497ba`;
   full PR CI green, master resynced to `cac375b`.
+- **Test-suite re-architecture + zero-tolerance duplicate-code gate** (PR #49,
+  merge `bc9dca2`; branch `refactor/tests-dedupe-and-zero-duplication`). Test
+  SLOC 5565 -> 5348 (-217): new shared helpers in `tests/utils.py`
+  (`run_ipnet` start/stop+cleanup context manager, `assert_config_file`,
+  `assert_all_paths`, `run_topology_scenario`, shared IGP path tables) and the
+  rootful daemon tests (ospf/ospf6/ripng/radv/static/bgp/switch/linkfailure)
+  rewritten onto them; parametrized the DHCP pid lookups and subnet-overlay
+  cases; dropped `test_pure` ConfigDict/ip_statement dupes covered by richer
+  sibling tests. Product de-duplication: capture start/stop loops
+  (`ipswitch`/`ipovs_switch`), IGP per-interface ConfigDict builder +
+  `is_active_interface` + interface/network population shared by ospf/ripng
+  (helper on `QuaggaDaemon`, called via `self` — `super()` breaks under
+  `RIPng -> MgmtdBackendDaemon`), and the visited-set BFS shared between
+  `base.py` router-id scan and `utils.find_node` as `walk_unvisited()`. Lint:
+  `duplication_max` 51 -> **0** (examples/install excluded as self-documenting
+  demos), `scripts/check-duplicates.sh` ignores examples/install, local
+  pre-commit hook added. Non-example duplicate blocks: 21 -> **0**. Coverage
+  preserved: branch fork dispatch `34030376167` **TOTAL 92.24%**, 278 passed
+  (gate stays 90). Gotchas caught by CI: (1) dropping `OSPF.is_active_interface`
+  breaks the `OSPF6(OSPF)` subclass which calls it from its own
+  `_build_interfaces` — delegate to the shared helper instead of deleting
+  (`35e79a1`); (2) `walk_unvisited` must enqueue `realIntfList(n.node)` for L3
+  neighbours, not the single neighbour interface, or the BFS never leaves the
+  first broadcast domain — which also breaks the DNS zone-server resolution
+  that relies on `find_node` (`7ec0587`). Full PR CI green (test 24m47s,
+  container-test 24m51s).
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
