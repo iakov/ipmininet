@@ -207,7 +207,7 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `d3ce325` (PRs #43..#50;
+- Fork `master` resynced to `mimi-net/master` through `ccb14ed` (PRs #43..#51;
   ff + pushed). **v1.3.0 released** (2026-09-06, tag `v1.3.0` on mimi-net;
   release notes https://github.com/mimi-net/ipmininet/releases/tag/v1.3.0).
   `origin` now holds only `master` + `me/agentic` (knowledge branch).
@@ -319,6 +319,24 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   Start with #126 (exabgp hang-after-link-flap repro) and #130 (OSPF6D
   dry-run config-check failure), then confirm-and-close #107/#121/#128. Record
   outcomes in this file. (User memo, 2026-09-06.)
+- **RESOLVED (2026-09-10): cnp3 open-issue triage done + first fix shipped.**
+  All 16 open cnp3 issues analysed (see `agentic/cnp3-open-issues.md`,
+  refreshed at `ccb14ed`). Net result: (1) **#99 -> fixed upstream** — while
+  triaging we found and fixed a real latent crash in
+  `BGPConfig.add_set_action` (`NoneType.entry` when two set actions on one
+  peer use different match conditions) and added the `order` parameter to
+  `set_local_pref`/`set_med`/`set_community` (PR mimi-net #51, merged
+  `ccb14ed`; rootless model test `test_bgp_model.py`, registered in test.yaml +
+  run-tests-parallel.sh). (2) #130 resolved-by-stack (OSPF6 config-check green
+  across the suite on FRR 10.7.1; Ubuntu 18.04 below floor). (3) #126 kept
+  open — spawn path has no custom stdin; hang consistent with consumer-pipe
+  deadlock; reduced-scale repro not attempted (full-scale ~60 routers not
+  cost-effective). (4) #73/#108 genuine open feature gaps; #28/#116/#127
+  OpenR-removed; #107/#121/#122/#125/#128/#129/#120/#104 resolved/answered.
+  Full per-issue analysis + 16 polished comment drafts + a commenting plan for
+  review live in gitignored `.tmp/cnp3/` (`analysis.md`, `replies.md`,
+  `commenting-plan.md`) — nothing posted to cnp3, no issues closed (per user:
+  drafts only, no comments posted). Master resynced to `ccb14ed`.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
