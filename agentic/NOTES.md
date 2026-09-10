@@ -362,7 +362,11 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   effort/actions), backlinks the downstream fork `mimi-net/ipmininet` and the
   head branch `iakov/ipmininet@upstream-v1.3.1`, and credits the whole
   downstream   team. cnp3 is the original (not archived), 70 stars,
-  still 16 open issues. Credits section carries a GitHub Contributors line
+  still 16 open issues. Body intentionally slim (~7.8k chars / 11 sections:
+  thanks, Summary, At a glance, Breaking changes+migration+rollback, What's in
+  it, Open upstream issues, Validation, Notes/versioning/credits, Checklist,
+  References); the full 78-commit appendix was dropped (GitHub "Commits" tab +
+  compare link cover it). Credits section carries a GitHub Contributors line
   tagging all 7 human accounts (@iakov @i1ya @ioannessh @shurenkov @MinyazevR
   @vicitori @IgorFilimonov; dependabot excluded). Do NOT create the PR without
   an explicit user prompt.
