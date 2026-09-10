@@ -207,7 +207,7 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   (`030c659`).
 
 ## Repo / local hygiene
-- Fork `master` resynced to `mimi-net/master` through `ccb14ed` (PRs #43..#51;
+- Fork `master` resynced to `mimi-net/master` through `9874fde` (PRs #43..#52;
   ff + pushed). **v1.3.0 released** (2026-09-06, tag `v1.3.0` on mimi-net;
   release notes https://github.com/mimi-net/ipmininet/releases/tag/v1.3.0).
   `origin` now holds only `master` + `me/agentic` (knowledge branch).
@@ -337,6 +337,24 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   review live in gitignored `.tmp/cnp3/` (`analysis.md`, `replies.md`,
   `commenting-plan.md`) — nothing posted to cnp3, no issues closed (per user:
   drafts only, no comments posted). Master resynced to `ccb14ed`.
+- **v1.3.1 released** (PR #52 `9874fde` = version bump only; tag `v1.3.1`).
+  Patch release for PR #51 (route-map `order` + `add_set_action` crash fix);
+  `pyproject`/`uv.lock` 1.3.0 -> 1.3.1, `docs/install.rst` pin bumped. PR CI
+  green before merge; post-merge master heavy-test/container-test confirmed (see
+  run list at merge time). Rationale: patch (no API/environment change; default
+  configs byte-identical).
+- **cnp3 mega-PR (draft ready, DEFERRED).** Plan: open one upstream PR
+  `cnp3:master <- iakov:upstream-v1.3.1` carrying the whole fork delta
+  (53 commits, 156 files, +11,391/-6,295) to revive the stale upstream
+  (last push 2023-01-18; last release v1.1). Preserve history (merge commit,
+  not squash); base cnp3:master; head a dedicated branch on `origin`. Mention
+  existing cnp3 PR #124 (GH Actions CI) as likely superseded, leave it open;
+  do not close cnp3 issues. Full ready-to-post body (14 sections + commit
+  appendix + operational notes header) saved at gitignored
+  `.tmp/cnp3/mega-PR.md`. Refs: compare
+  `cnp3/ipmininet compare master...mimi-net:ipmininet:master`; cnp3 is the
+  original (not archived), 70 stars, still 16 open issues. Do NOT create the PR
+  without an explicit user prompt.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
