@@ -55,3 +55,13 @@ commenting plan for review, live in the gitignored scratch dir
 are NOT committed (`.tmp/` is scratch); if they are lost, this table is the
 durable summary and drafts can be regenerated from it. Nothing has been posted
 to cnp3 and nothing will be without an explicit user prompt.
+
+## Upstream mega-PR (2026-09-10)
+Opened **https://github.com/cnp3/ipmininet/pull/131** — `release: ipmininet
+v1.3.1 — revive upstream` (base `cnp3:master`, head `iakov:upstream-v1.3.1`,
+78 commits, +11,391/-6,295 over merge-base `72cefde`). It carries the whole
+downstream line v1.2.x -> v1.3.1 and includes the #99 fix (PR mimi-net #51).
+Requested a merge commit (preserve history); mentioned upstream PR #124 as
+likely superseded; closes no issues. Body draft (slimmed, 11 sections) at
+gitignored `.tmp/cnp3/mega-PR.md` / `mega-PR.body.md`. cnp3 has no PR CI, so
+no checks run on #131.

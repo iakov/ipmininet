@@ -368,8 +368,11 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   References); the full 78-commit appendix was dropped (GitHub "Commits" tab +
   compare link cover it). Credits section carries a GitHub Contributors line
   tagging all 7 human accounts (@iakov @i1ya @ioannessh @shurenkov @MinyazevR
-  @vicitori @IgorFilimonov; dependabot excluded). Do NOT create the PR without
-  an explicit user prompt.
+  @vicitori @IgorFilimonov; dependabot excluded).
+  **OPENED 2026-09-10: https://github.com/cnp3/ipmininet/pull/131** (base
+  cnp3:master, head iakov:upstream-v1.3.1, 78 commits, MERGEABLE; no checks
+  reported — cnp3 has no PR CI). Asked for a merge commit; mentioned PR #124;
+  closes no issues.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
 - Scratch files: only the git-ignored `.tmp/` under the repo root (never
