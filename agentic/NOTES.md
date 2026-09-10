@@ -357,7 +357,11 @@ scratch dir is git-ignored; diagnostic scripts referenced here live in
   likely superseded, leave it open; close no cnp3 issues. Ready-to-post body
   (14 sections + 78-commit appendix) at gitignored `.tmp/cnp3/mega-PR.md`;
   clean posting copy (operational header stripped) at
-  `.tmp/cnp3/mega-PR.body.md`. cnp3 is the original (not archived), 70 stars,
+  `.tmp/cnp3/mega-PR.body.md`. Body opens with "A note of thanks"
+  (first-person thanks/gratitude, "we" reserved for the downstream team's
+  effort/actions), backlinks the downstream fork `mimi-net/ipmininet` and the
+  head branch `iakov/ipmininet@upstream-v1.3.1`, and credits the whole
+  downstream team. cnp3 is the original (not archived), 70 stars,
   still 16 open issues. Do NOT create the PR without an explicit user prompt.
 - Pruned stale `mimi-net/dependabot/uv/python-dependencies-*` and
   `mimi-net/dependabot/docker/docker-dependencies-*` tracking refs.
